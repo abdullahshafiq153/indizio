@@ -1,6 +1,6 @@
-# INDIZIO design prototype
+# INDIZIO
 
-This is the first interactive frontend direction for `indizio.space`.
+The Next.js application for [indizio.space](https://indizio.space): a curated index of ecommerce websites, patterns, and field research.
 
 ## Design synthesis
 
@@ -10,12 +10,28 @@ This is the first interactive frontend direction for `indizio.space`.
 
 The approved palette is intentionally restricted to black, white, and `#f7f7f7`. Visual variation comes from line work, scale, spacing, grid texture, and typography.
 
-The prototype deliberately uses generated typographic brand panels rather than storefront screenshots. All brand entries are fictional design-review data.
+The current V1 uses generated typographic brand panels rather than storefront screenshots. All entries are fictional seed data ready to be replaced by Payload CMS queries.
 
-## Review locally
+## Local development
 
-Open `index.html` directly in a browser. Search, filters, industry jumps, detail dialogs, mobile navigation, load-more behavior, and the newsletter confirmation state are interactive.
+```bash
+pnpm install
+pnpm dev
+```
 
-## Production migration
+Open `http://localhost:3000`. Search, filters, industry jumps, detail dialogs, mobile navigation, bookmarks, account gating, load-more behavior, and the newsletter confirmation state are interactive.
 
-After visual approval, move the interface into the Next.js + Payload application and replace the sample array with Payload queries. MongoDB Atlas, Beehiiv, and object storage require production credentials.
+## Checks
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
+## Next integrations
+
+- Payload CMS with MongoDB Atlas
+- Persistent authentication and saved websites
+- Beehiiv newsletter subscription endpoint
+- CMS-managed website entries and editorial research

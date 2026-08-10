@@ -112,6 +112,10 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .card-visual::before { width: 75%; aspect-ratio: 1; right: -26%; top: -50%; }
 .card-visual::after { width: 56%; aspect-ratio: 1; left: -22%; bottom: -48%; }
 .card-open { position: absolute; inset: 0; z-index: 1; width: 100%; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; }
+.card-cover { object-fit: cover; object-position: top; transition: transform .5s ease; }
+.site-card:hover .card-cover { transform: scale(1.015); }
+.card-visual:has(.card-cover)::before, .card-visual:has(.card-cover)::after { display: none; }
+.card-visual:has(.card-cover) .card-index { padding: 7px 9px; background: rgba(255,255,255,.88); color: var(--ink); backdrop-filter: blur(8px); }
 .card-index { position: absolute; top: 15px; left: 15px; font: 400 9px var(--font-dm-mono), monospace; }
 .card-mark { position: absolute; left: 24px; bottom: 22px; font-size: clamp(30px, 4vw, 56px); line-height: .9; letter-spacing: -.065em; font-weight: 600; max-width: 82%; }
 .card-actions { display: flex; align-items: center; gap: 9px; }
@@ -174,6 +178,8 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .site-dialog::backdrop { background: rgba(0,0,0,.62); backdrop-filter: blur(5px); }
 .dialog-close { position: absolute; z-index: 2; top: 12px; right: 12px; width: 38px; height: 38px; border: 1px solid currentColor; background: transparent; font-size: 20px; }
 .dialog-visual { min-height: 250px; padding: 30px; background: var(--ink); color: var(--white); display: flex; align-items: flex-end; font-size: 56px; font-weight: 600; letter-spacing: -.06em; }
+.dialog-visual.has-cover { position: relative; min-height: 360px; padding: 0; overflow: hidden; background: var(--paper); }
+.dialog-visual.has-cover img { object-fit: cover; object-position: top; }
 .dialog-copy { padding: 30px; }
 .dialog-copy .eyebrow { margin-bottom: 14px; }
 .dialog-copy h2 { font-size: 44px; margin-bottom: 22px; }

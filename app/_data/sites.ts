@@ -2,7 +2,8 @@ export type Site = {
   id?: string
   slug?: string
   name: string
-  industry: 'Beauty' | 'Fashion' | 'Food' | 'Health' | 'Home' | 'Technology'
+  coverImage?: string
+  industry: string
   style: string
   note: string
   url: string

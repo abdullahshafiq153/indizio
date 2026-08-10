@@ -43,9 +43,10 @@ async function loadHomeData(): Promise<{
       id: String(website.id),
       slug: website.slug,
       name: website.name,
-      industry: (typeof website.industry === 'object' ? website.industry.name : 'Technology') as Site['industry'],
+      coverImage: website.coverImage,
+      industry: typeof website.industry === 'object' && website.industry ? website.industry.name : 'Ecommerce',
       style: website.styles?.map((style: { name: string } | string | number) => typeof style === 'object' ? style.name : '').filter(Boolean).join(' / ') || 'Unclassified',
-      note: website.note,
+      note: website.note || '',
       url: website.url,
       featured: website.featuredRank || 0,
     }))

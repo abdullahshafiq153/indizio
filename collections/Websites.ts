@@ -8,7 +8,7 @@ export const Websites: CollectionConfig = {
   admin: {
     group: 'Library',
     useAsTitle: 'name',
-    defaultColumns: ['name', 'industry', 'featuredRank', '_status'],
+    defaultColumns: ['name', 'url', 'industry', 'featuredRank', '_status'],
   },
   access: {
     read: ({ req }) => req.user?.collection === 'admins' || { _status: { equals: 'published' } },
@@ -21,9 +21,10 @@ export const Websites: CollectionConfig = {
     { name: 'name', type: 'text', required: true },
     slugField,
     { name: 'url', type: 'text', required: true },
-    { name: 'industry', type: 'relationship', relationTo: 'industries', required: true },
+    { name: 'coverImage', type: 'text', required: true, label: 'Cover image URL' },
+    { name: 'industry', type: 'relationship', relationTo: 'industries' },
     { name: 'styles', type: 'relationship', relationTo: 'styles', hasMany: true },
-    { name: 'note', type: 'textarea', required: true },
+    { name: 'note', type: 'textarea' },
     { name: 'featuredRank', type: 'number', defaultValue: 0, index: true },
   ],
 }

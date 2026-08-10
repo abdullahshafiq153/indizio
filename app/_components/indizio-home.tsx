@@ -1,8 +1,9 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FormEvent, useMemo, useRef, useState, useTransition } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import {
   createBookmarkCollection,
   removeBookmark,
@@ -16,7 +17,7 @@ import type {
   BookmarkCollectionSummary,
   MemberSummary,
   SavedBookmarkSummary,
-} from '../(frontend)/page'
+} from '../_data/load-library-data'
 import type { Site } from '../_data/sites'
 
 type SortMode = 'featured' | 'newest' | 'az'
@@ -42,9 +43,12 @@ type Props = {
   initialMember: MemberSummary | null
   initialCollections: BookmarkCollectionSummary[]
   initialBookmarks: SavedBookmarkSummary[]
+  mode?: 'home' | 'library'
 }
 
-export function IndizioHome({ initialSites, initialMember, initialCollections, initialBookmarks }: Props) {
+export function IndizioHome({ initialSites, initialMember, initialCollections, initialBookmarks, mode = 'home' }: Props) {
+  const isLibraryPage = mode === 'library'
+  const initialVisible = isLibraryPage ? 12 : 9
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup')
@@ -61,9 +65,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
   const [sort, setSort] = useState<SortMode>('featured')
-  const [visible, setVisible] = useState(9)
+  const [visible, setVisible] = useState(initialVisible)
   const authDialogRef = useRef<HTMLDialogElement>(null)
   const bookmarkDialogRef = useRef<HTMLDialogElement>(null)
+  const infiniteScrollRef = useRef<HTMLDivElement>(null)
   const siteDialogRef = useRef<HTMLDialogElement>(null)
 
   const authenticated = Boolean(initialMember)
@@ -97,12 +102,27 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     })
   }, [industries, initialSites, query, savedOnly, selectedCollectionWebsiteIDs, sort])
 
+  useEffect(() => {
+    if (!isLibraryPage || visible >= filteredSites.length) return
+    const target = infiniteScrollRef.current
+    if (!target) return
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisible((count) => Math.min(count + 9, filteredSites.length))
+      }
+    }, { rootMargin: '500px 0px' })
+
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [filteredSites.length, isLibraryPage, visible])
+
   const resetFilters = () => {
     setQuery('')
     setIndustries(new Set())
     setSavedOnly(false)
     setSelectedCollection(null)
-    setVisible(9)
+    setVisible(initialVisible)
   }
 
   const openAuth = (site: Site | null = null) => {
@@ -205,7 +225,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     setIndustries(new Set([industry]))
     setSavedOnly(false)
     setSelectedCollection(null)
-    setVisible(9)
+    setVisible(initialVisible)
     setFiltersOpen(true)
     document.querySelector('#library')?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -215,7 +235,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     setSelectedCollection(null)
     setIndustries(new Set())
     setQuery('')
-    setVisible(9)
+    setVisible(initialVisible)
     document.querySelector('#library')?.scrollIntoView({ behavior: 'smooth' })
   }
 
@@ -225,16 +245,16 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
       <div className="announcement">
         <span>The INDIZIO Ecommerce Index 2026</span>
-        <a href="#index-report">Preview the research <span aria-hidden="true">↗</span></a>
+        <Link href="/#index-report">Preview the research <span aria-hidden="true">↗</span></Link>
       </div>
 
       <header className="site-header">
-        <a className="wordmark" href="#top" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></a>
+        <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
         <nav className="primary-nav" aria-label="Primary navigation">
-          <a href="#library">Websites</a>
-          <a href="#industries">Industries</a>
-          <a href="#index-report">Research</a>
-          <a href="#about">About</a>
+          <Link href="/library" aria-current={isLibraryPage ? 'page' : undefined}>Websites</Link>
+          <Link href="/#industries">Industries</Link>
+          <Link href="/#index-report">Research</Link>
+          <Link href="/#about">About</Link>
         </nav>
         <div className="account-controls">
           {authenticated && (
@@ -244,47 +264,47 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           )}
           <button className="account-button" type="button" onClick={handleAccount} disabled={isPending}>{authenticated ? 'Log out' : 'Log in'}</button>
         </div>
-        <a className="line-button line-button--dark header-cta" href="#newsletter">
+        <Link className="line-button line-button--dark header-cta" href="/#newsletter">
           <span>Get the fieldnotes</span><span className="line-button__icon" aria-hidden="true">↗</span>
-        </a>
+        </Link>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
-        <a href="#library">Websites</a><a href="#industries">Industries</a><a href="#index-report">Research</a><a href="#about">About</a>
+        <Link href="/library">Websites</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link><Link href="/#about">About</Link>
         <button className="mobile-account-button" type="button" onClick={handleAccount}>{authenticated ? 'Log out' : 'Log in'}</button>
       </nav>
 
       <main id="top">
-        <section className="hero ruled-section">
+        {!isLibraryPage && <section className="hero ruled-section">
           <div className="hero__headline">
             <p className="eyebrow"><span className="signal-dot" />Independent ecommerce research</p>
             <h1>Evidence from<br />the storefront.</h1>
             <div className="hero__aside-copy">
               <p className="hero__intro">A living index of remarkable ecommerce websites, emerging patterns, and the details worth studying.</p>
-              <a className="line-button line-button--dark hero__cta" href="#library">
-                <span>Explore the library</span><span className="line-button__icon" aria-hidden="true">↓</span>
-              </a>
+              <Link className="line-button line-button--dark hero__cta" href="/library">
+                <span>Explore the library</span><span className="line-button__icon" aria-hidden="true">↗</span>
+              </Link>
             </div>
           </div>
           <div className="hero-paths" aria-label="Explore INDIZIO">
-            <a className="hero-path" href="#library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></a>
+            <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
             <a className="hero-path" href="#industries"><span className="hero-path__meta">02 / Building next</span><span className="hero-path__copy"><strong>Commerce patterns</strong><span>Buy boxes, cart drawers, cancel flows, and repeatable conversion patterns.</span></span><span className="hero-path__cta">Preview patterns <i aria-hidden="true">↗</i></span></a>
             <a className="hero-path" href="#index-report"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></a>
             <a className="hero-path" href="#newsletter"><span className="hero-path__meta">04 / Coming soon</span><span className="hero-path__copy"><strong>Ecommerce ideas</strong><span>Practical concepts, experiments, and details worth testing on your own store.</span></span><span className="hero-path__cta">Get early access <i aria-hidden="true">↗</i></span></a>
           </div>
-        </section>
+        </section>}
 
-        <section className="library ruled-section" id="library">
+        <section className={`library ruled-section${isLibraryPage ? ' library--page' : ''}`} id="library">
           <div className="section-heading">
-            <div><p className="eyebrow">01 / The library</p><h2>Websites worth studying.</h2></div>
-            <p>Selected for the decisions behind the design—not simply how the homepage looks.</p>
+            <div><p className="eyebrow">{isLibraryPage ? 'The complete index / 001' : '01 / The library'}</p><h2>Websites worth studying.</h2></div>
+            <p>{isLibraryPage ? 'Browse the complete, continuously growing index of storefronts selected for the decisions behind their design.' : 'Selected for the decisions behind the design—not simply how the homepage looks.'}</p>
           </div>
 
           <div className="library-tools">
             <label className="search-field">
               <span className="visually-hidden">Search websites</span><span aria-hidden="true">⌕</span>
-              <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(9) }} placeholder="Search by brand, industry, or observation" autoComplete="off" />
+              <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(initialVisible) }} placeholder="Search by brand, industry, or observation" autoComplete="off" />
             </label>
             <button className="filter-trigger" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
               Filters <span>{industries.size}</span><span aria-hidden="true">＋</span>
@@ -302,14 +322,14 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                     return next
                   })
                   setSavedOnly(false)
-                  setVisible(9)
+                  setVisible(initialVisible)
                 }}>{industry}</button>
               ))}
             </div></div>
             {authenticated && collections.length > 0 && <div><p className="filter-label">Saved collections</p><div className="filter-options">
-              <button className={`filter-chip${savedOnly && !selectedCollection ? ' active' : ''}`} type="button" onClick={() => { setSavedOnly(true); setSelectedCollection(null); setIndustries(new Set()); setVisible(9) }}>All saved</button>
+              <button className={`filter-chip${savedOnly && !selectedCollection ? ' active' : ''}`} type="button" onClick={() => { setSavedOnly(true); setSelectedCollection(null); setIndustries(new Set()); setVisible(initialVisible) }}>All saved</button>
               {collections.map((collection) => (
-                <button className={`filter-chip${selectedCollection === collection.id ? ' active' : ''}`} type="button" key={collection.id} onClick={() => { setSavedOnly(true); setSelectedCollection(collection.id); setIndustries(new Set()); setVisible(9) }}>{collection.name} · {collection.count}</button>
+                <button className={`filter-chip${selectedCollection === collection.id ? ' active' : ''}`} type="button" key={collection.id} onClick={() => { setSavedOnly(true); setSelectedCollection(collection.id); setIndustries(new Set()); setVisible(initialVisible) }}>{collection.name} · {collection.count}</button>
               ))}
             </div></div>}
             <button className="text-button" type="button" onClick={resetFilters}>Clear all</button>
@@ -345,10 +365,12 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
 
           {filteredSites.length === 0 && <div className="empty-state"><p>No signals found.</p><button className="text-button" type="button" onClick={resetFilters}>Reset the library</button></div>}
-          {visible < filteredSites.length && <div className="load-more-wrap"><button className="line-button" type="button" onClick={() => setVisible((count) => count + 6)}><span>Load more websites</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
+          {!isLibraryPage && visible < filteredSites.length && <div className="load-more-wrap"><button className="line-button" type="button" onClick={() => setVisible((count) => count + 6)}><span>Load more websites</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
+          {isLibraryPage && visible < filteredSites.length && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status"><span className="infinite-scroll-mark" aria-hidden="true" />Loading more websites</div>}
+          {isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
         </section>
 
-        <section className="stat-strip" aria-label="Library statistics">
+        {!isLibraryPage && <><section className="stat-strip" aria-label="Library statistics">
           <div><strong>001</strong><span>Edition</span></div><div><strong>{String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>08</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
         </section>
 
@@ -365,10 +387,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
         <section className="about ruled-section" id="about"><p className="eyebrow">About the work</p><p>INDIZIO means “a clue” in Italian. This is a record of the clues hiding in plain sight across modern commerce—the small choices that shape how people understand, trust, and buy from a brand.</p></section>
 
-        <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>
+        <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section></>}
       </main>
 
-      <footer className="site-footer"><div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><a href="#library">Websites</a><a href="#industries">Industries</a><a href="#index-report">Research</a></div><div><p className="footer-label">Follow</p><a href="#newsletter">Newsletter</a><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div></footer>
+      <footer className="site-footer"><div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div></footer>
 
       <dialog className="site-dialog" ref={siteDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
         <button className="dialog-close" type="button" aria-label="Close" onClick={() => siteDialogRef.current?.close()}>×</button>

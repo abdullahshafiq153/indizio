@@ -75,7 +75,7 @@ async function loadHomeData(): Promise<{
     const bookmarks = bookmarkResult.docs.map((bookmark) => ({
       id: String(bookmark.id),
       websiteID: relationshipID(bookmark.website),
-      collectionID: relationshipID(bookmark.collection),
+      collectionID: relationshipID(bookmark.folder),
     }))
 
     return {

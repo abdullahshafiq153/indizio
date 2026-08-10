@@ -146,7 +146,7 @@ export async function saveBookmark(formData: FormData): Promise<ActionResult> {
   try {
     await session.payload.create({
       collection: 'bookmarks',
-      data: { owner: session.user.id, website, collection, note },
+      data: { owner: session.user.id, website, folder: collection, note },
       overrideAccess: false,
       user: session.user,
     })

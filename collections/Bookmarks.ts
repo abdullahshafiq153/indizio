@@ -15,7 +15,7 @@ export const Bookmarks: CollectionConfig = {
     beforeChange: [async ({ data, req }) => {
       if (req.user?.collection !== 'members') return data
 
-      const folderID = typeof data?.collection === 'object' ? data.collection.id : data?.collection
+      const folderID = typeof data?.folder === 'object' ? data.folder.id : data?.folder
       if (!folderID) throw new Error('Choose a collection before saving this website.')
 
       const folder = await req.payload.findByID({
@@ -31,11 +31,11 @@ export const Bookmarks: CollectionConfig = {
     }],
   },
   indexes: [
-    { fields: ['owner', 'collection', 'website'], unique: true },
+    { fields: ['owner', 'folder', 'website'], unique: true },
   ],
   fields: [
     { name: 'owner', type: 'relationship', relationTo: 'members', required: true, index: true },
-    { name: 'collection', type: 'relationship', relationTo: 'bookmark-collections', required: true, index: true },
+    { name: 'folder', type: 'relationship', relationTo: 'bookmark-collections', required: true, index: true },
     { name: 'website', type: 'relationship', relationTo: 'websites', required: true, index: true },
     { name: 'note', type: 'textarea' },
     { name: 'position', type: 'number', defaultValue: 0 },

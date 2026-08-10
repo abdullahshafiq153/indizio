@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Mono, Manrope } from 'next/font/google'
-import '../styles.css'
+import '../../styles.css'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   themeColor: '#f7f7f7',
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function FrontendLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${manrope.variable} ${dmMono.variable}`}>
       <body>{children}</body>

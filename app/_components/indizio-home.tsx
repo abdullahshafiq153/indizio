@@ -1,6 +1,21 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { FormEvent, useMemo, useRef, useState, useTransition } from 'react'
+import {
+  createBookmarkCollection,
+  removeBookmark,
+  saveBookmark,
+  signIn,
+  signOut,
+  signUp,
+  subscribeNewsletter,
+} from '../actions'
+import type {
+  BookmarkCollectionSummary,
+  MemberSummary,
+  SavedBookmarkSummary,
+} from '../(frontend)/page'
 import type { Site } from '../_data/sites'
 
 type SortMode = 'featured' | 'newest' | 'az'
@@ -21,31 +36,44 @@ function BookmarkIcon({ filled = false }: { filled?: boolean }) {
   )
 }
 
-export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
-  const [authenticated, setAuthenticated] = useState(false)
-  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set())
+type Props = {
+  initialSites: Site[]
+  initialMember: MemberSummary | null
+  initialCollections: BookmarkCollectionSummary[]
+  initialBookmarks: SavedBookmarkSummary[]
+}
+
+export function IndizioHome({ initialSites, initialMember, initialCollections, initialBookmarks }: Props) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup')
+  const [authMessage, setAuthMessage] = useState('')
+  const [bookmarkMessage, setBookmarkMessage] = useState('')
+  const [collections, setCollections] = useState(initialCollections)
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [industries, setIndustries] = useState<Set<string>>(new Set())
   const [menuOpen, setMenuOpen] = useState(false)
   const [newsletterMessage, setNewsletterMessage] = useState('No noise. Unsubscribe whenever you like.')
-  const [pendingBookmark, setPendingBookmark] = useState<string | null>(null)
+  const [pendingBookmark, setPendingBookmark] = useState<Site | null>(null)
   const [query, setQuery] = useState('')
   const [savedOnly, setSavedOnly] = useState(false)
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
   const [sort, setSort] = useState<SortMode>('featured')
   const [visible, setVisible] = useState(9)
   const authDialogRef = useRef<HTMLDialogElement>(null)
+  const bookmarkDialogRef = useRef<HTMLDialogElement>(null)
   const siteDialogRef = useRef<HTMLDialogElement>(null)
 
-  useEffect(() => {
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAuthenticated(localStorage.getItem('indizio-authenticated') === 'true')
-      setBookmarks(new Set(JSON.parse(localStorage.getItem('indizio-bookmarks') || '[]') as string[]))
-    } catch {
-      // Storage can be unavailable in privacy-restricted contexts.
-    }
-  }, [])
+  const authenticated = Boolean(initialMember)
+  const savedWebsiteIDs = useMemo(
+    () => new Set(initialBookmarks.map((bookmark) => bookmark.websiteID)),
+    [initialBookmarks],
+  )
+  const selectedCollectionWebsiteIDs = useMemo(
+    () => new Set(initialBookmarks.filter((bookmark) => !selectedCollection || bookmark.collectionID === selectedCollection).map((bookmark) => bookmark.websiteID)),
+    [initialBookmarks, selectedCollection],
+  )
 
   const industryOptions = useMemo(
     () => [...new Set(initialSites.map((site) => site.industry))].sort(),
@@ -57,7 +85,7 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
     const filtered = initialSites.filter((site) => {
       const matchesText = !normalizedQuery || `${site.name} ${site.industry} ${site.style} ${site.note}`.toLowerCase().includes(normalizedQuery)
       const matchesIndustry = industries.size === 0 || industries.has(site.industry)
-      const matchesSaved = !savedOnly || bookmarks.has(site.name)
+      const matchesSaved = !savedOnly || Boolean(site.id && selectedCollectionWebsiteIDs.has(site.id))
       return matchesText && matchesIndustry && matchesSaved
     })
 
@@ -66,33 +94,31 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
       if (sort === 'newest') return initialSites.indexOf(a) - initialSites.indexOf(b)
       return b.featured - a.featured
     })
-  }, [bookmarks, industries, initialSites, query, savedOnly, sort])
+  }, [industries, initialSites, query, savedOnly, selectedCollectionWebsiteIDs, sort])
 
   const resetFilters = () => {
     setQuery('')
     setIndustries(new Set())
     setSavedOnly(false)
+    setSelectedCollection(null)
     setVisible(9)
   }
 
-  const openAuth = (siteName: string | null = null) => {
-    setPendingBookmark(siteName)
+  const openAuth = (site: Site | null = null) => {
+    setPendingBookmark(site)
+    setAuthMessage('')
+    setAuthMode('signup')
     authDialogRef.current?.showModal()
   }
 
-  const toggleBookmark = (siteName: string) => {
+  const openBookmark = (site: Site) => {
     if (!authenticated) {
-      openAuth(siteName)
+      openAuth(site)
       return
     }
-
-    setBookmarks((current) => {
-      const next = new Set(current)
-      if (next.has(siteName)) next.delete(siteName)
-      else next.add(siteName)
-      localStorage.setItem('indizio-bookmarks', JSON.stringify([...next]))
-      return next
-    })
+    setPendingBookmark(site)
+    setBookmarkMessage('')
+    bookmarkDialogRef.current?.showModal()
   }
 
   const handleAccount = () => {
@@ -100,38 +126,84 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
       openAuth()
       return
     }
-    setAuthenticated(false)
-    setSavedOnly(false)
-    localStorage.setItem('indizio-authenticated', 'false')
+    startTransition(async () => {
+      await signOut()
+      setSavedOnly(false)
+      router.refresh()
+    })
   }
 
   const handleAuth = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setAuthenticated(true)
-    localStorage.setItem('indizio-authenticated', 'true')
-    if (pendingBookmark) {
-      setBookmarks((current) => {
-        const next = new Set(current).add(pendingBookmark)
-        localStorage.setItem('indizio-bookmarks', JSON.stringify([...next]))
-        return next
-      })
-    }
-    setPendingBookmark(null)
-    event.currentTarget.reset()
-    authDialogRef.current?.close()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    setAuthMessage('')
+    startTransition(async () => {
+      const result = authMode === 'signup' ? await signUp(data) : await signIn(data)
+      setAuthMessage(result.message)
+      if (result.ok) {
+        form.reset()
+        authDialogRef.current?.close()
+        router.refresh()
+      }
+    })
   }
 
   const handleNewsletter = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const email = new FormData(event.currentTarget).get('email')
-    setNewsletterMessage(`Fieldnote reserved for ${email}. Beehiiv connection follows in the production build.`)
-    event.currentTarget.reset()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    startTransition(async () => {
+      const result = await subscribeNewsletter(data)
+      setNewsletterMessage(result.message)
+      if (result.ok) form.reset()
+    })
+  }
+
+  const handleCreateCollection = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    startTransition(async () => {
+      const result = await createBookmarkCollection(data)
+      setBookmarkMessage(result.message)
+      if (result.ok && result.id) {
+        setCollections((current) => [{ id: result.id!, name: String(data.get('name')), count: 0 }, ...current])
+        form.reset()
+      }
+    })
+  }
+
+  const handleSaveBookmark = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    startTransition(async () => {
+      const result = await saveBookmark(data)
+      setBookmarkMessage(result.message)
+      if (result.ok) {
+        bookmarkDialogRef.current?.close()
+        setPendingBookmark(null)
+        router.refresh()
+      }
+    })
+  }
+
+  const handleRemoveBookmark = (bookmarkID: string) => {
+    const data = new FormData()
+    data.set('bookmark', bookmarkID)
+    startTransition(async () => {
+      const result = await removeBookmark(data)
+      setBookmarkMessage(result.message)
+      if (result.ok) router.refresh()
+    })
   }
 
   const jumpToIndustry = (industry: string) => {
     setQuery('')
     setIndustries(new Set([industry]))
     setSavedOnly(false)
+    setSelectedCollection(null)
     setVisible(9)
     setFiltersOpen(true)
     document.querySelector('#library')?.scrollIntoView({ behavior: 'smooth' })
@@ -139,6 +211,7 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
 
   const openSaved = () => {
     setSavedOnly(true)
+    setSelectedCollection(null)
     setIndustries(new Set())
     setQuery('')
     setVisible(9)
@@ -164,11 +237,11 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
         </nav>
         <div className="account-controls">
           {authenticated && (
-            <button className="bookmark-collection" type="button" onClick={openSaved} aria-label={`View ${bookmarks.size} saved websites`}>
-              <BookmarkIcon /> <span>{bookmarks.size}</span>
+            <button className="bookmark-collection" type="button" onClick={openSaved} aria-label={`View ${savedWebsiteIDs.size} saved websites`}>
+              <BookmarkIcon /> <span>{savedWebsiteIDs.size}</span>
             </button>
           )}
-          <button className="account-button" type="button" onClick={handleAccount}>{authenticated ? 'Log out' : 'Log in'}</button>
+          <button className="account-button" type="button" onClick={handleAccount} disabled={isPending}>{authenticated ? 'Log out' : 'Log in'}</button>
         </div>
         <a className="line-button line-button--dark header-cta" href="#newsletter">
           <span>Get the fieldnotes</span><span className="line-button__icon" aria-hidden="true">↗</span>
@@ -232,6 +305,12 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
                 }}>{industry}</button>
               ))}
             </div></div>
+            {authenticated && collections.length > 0 && <div><p className="filter-label">Saved collections</p><div className="filter-options">
+              <button className={`filter-chip${savedOnly && !selectedCollection ? ' active' : ''}`} type="button" onClick={() => { setSavedOnly(true); setSelectedCollection(null); setIndustries(new Set()); setVisible(9) }}>All saved</button>
+              {collections.map((collection) => (
+                <button className={`filter-chip${selectedCollection === collection.id ? ' active' : ''}`} type="button" key={collection.id} onClick={() => { setSavedOnly(true); setSelectedCollection(collection.id); setIndustries(new Set()); setVisible(9) }}>{collection.name} · {collection.count}</button>
+              ))}
+            </div></div>}
             <button className="text-button" type="button" onClick={resetFilters}>Clear all</button>
           </div>
 
@@ -242,7 +321,7 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
 
           <div className="card-grid" aria-live="polite">
             {filteredSites.slice(0, visible).map((site, index) => {
-              const bookmarked = authenticated && bookmarks.has(site.name)
+              const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
               return (
                 <article className="site-card" key={site.name}>
                   <div className="card-visual">
@@ -254,7 +333,7 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
                   <div className="card-meta">
                     <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                       <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name} website`} title="Visit website"><ExternalIcon /></a>
-                      <button className="card-action" type="button" onClick={() => toggleBookmark(site.name)} aria-label={`${authenticated ? (bookmarked ? 'Remove' : 'Bookmark') : 'Sign up to bookmark'} ${site.name}`} aria-pressed={bookmarked} title={authenticated ? 'Bookmark website' : 'Sign up to bookmark'}><BookmarkIcon filled={bookmarked} /></button>
+                      <button className="card-action" type="button" onClick={() => openBookmark(site)} aria-label={`${authenticated ? 'Organize' : 'Sign up to bookmark'} ${site.name}`} aria-pressed={bookmarked} title={authenticated ? 'Save to a collection' : 'Sign up to bookmark'}><BookmarkIcon filled={bookmarked} /></button>
                     </div></div>
                     <div className="card-detail-row"><p>{site.industry} · {site.style}</p></div>
                   </div>
@@ -284,7 +363,7 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
 
         <section className="about ruled-section" id="about"><p className="eyebrow">About the work</p><p>INDIZIO means “a clue” in Italian. This is a record of the clues hiding in plain sight across modern commerce—the small choices that shape how people understand, trust, and buy from a brand.</p></section>
 
-        <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe"><span>Join the fieldnotes</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>
+        <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>
       </main>
 
       <footer className="site-footer"><div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><a href="#library">Websites</a><a href="#industries">Industries</a><a href="#index-report">Research</a></div><div><p className="footer-label">Follow</p><a href="#newsletter">Newsletter</a><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div></footer>
@@ -296,7 +375,63 @@ export function IndizioHome({ initialSites }: { initialSites: Site[] }) {
 
       <dialog className="auth-dialog" ref={authDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
         <button className="dialog-close auth-dialog__close" type="button" aria-label="Close" onClick={() => authDialogRef.current?.close()}>×</button>
-        <div className="auth-dialog__content"><p className="eyebrow">Save your research</p><h2>Create your INDIZIO account.</h2><p>Sign up to bookmark storefronts and return to your saved library from any device.</p><form className="auth-form" onSubmit={handleAuth}><label className="visually-hidden" htmlFor="account-email">Email address</label><input id="account-email" name="email" type="email" placeholder="Email address" required /><button className="line-button line-button--dark" type="submit"><span>Continue with email</span><span className="line-button__icon" aria-hidden="true">→</span></button></form><p className="auth-note">Prototype account flow. Production authentication will be connected to Payload.</p></div>
+        <div className="auth-dialog__content">
+          <p className="eyebrow">Save your research</p>
+          <h2>{authMode === 'signup' ? 'Create your INDIZIO account.' : 'Welcome back.'}</h2>
+          <p>{authMode === 'signup' ? 'Create collections, annotate storefronts, and return to your research from any device.' : 'Sign in to open your saved collections.'}</p>
+          <div className="auth-tabs" role="tablist" aria-label="Account access">
+            <button type="button" className={authMode === 'signup' ? 'active' : ''} onClick={() => { setAuthMode('signup'); setAuthMessage('') }}>Sign up</button>
+            <button type="button" className={authMode === 'signin' ? 'active' : ''} onClick={() => { setAuthMode('signin'); setAuthMessage('') }}>Sign in</button>
+          </div>
+          <form className="auth-form" onSubmit={handleAuth}>
+            {authMode === 'signup' && <><label htmlFor="account-name">Name</label><input id="account-name" name="name" type="text" placeholder="Your name" autoComplete="name" required /></>}
+            <label htmlFor="account-email">Email address</label><input id="account-email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
+            <label htmlFor="account-password">Password</label><input id="account-password" name="password" type="password" placeholder="At least 8 characters" minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} required />
+            {authMode === 'signup' && <label className="consent-field"><input name="newsletterConsent" type="checkbox" defaultChecked /><span>Also send me INDIZIO’s weekly fieldnotes. I can unsubscribe at any time.</span></label>}
+            <button className="line-button line-button--dark" type="submit" disabled={isPending}><span>{isPending ? 'Please wait…' : authMode === 'signup' ? 'Create account' : 'Sign in'}</span><span className="line-button__icon" aria-hidden="true">→</span></button>
+          </form>
+          <p className="auth-note" aria-live="polite">{authMessage || 'Your newsletter choice is optional and stored with your account.'}</p>
+        </div>
+      </dialog>
+
+      <dialog className="auth-dialog collection-dialog" ref={bookmarkDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
+        <button className="dialog-close auth-dialog__close" type="button" aria-label="Close" onClick={() => bookmarkDialogRef.current?.close()}>×</button>
+        <div className="auth-dialog__content">
+          <p className="eyebrow">Your research library</p>
+          <h2>Save {pendingBookmark?.name || 'this website'}.</h2>
+          <p>Choose a collection, or make a new one for this line of research.</p>
+          {collections.length > 0 && pendingBookmark?.id && (
+            <form className="auth-form collection-save-form" onSubmit={handleSaveBookmark}>
+              <input type="hidden" name="website" value={pendingBookmark.id} />
+              <label htmlFor="bookmark-folder">Collection</label>
+              <select id="bookmark-folder" name="collection" defaultValue={collections[0]?.id} required>
+                {collections.map((collection) => <option key={collection.id} value={collection.id}>{collection.name} ({collection.count})</option>)}
+              </select>
+              <label htmlFor="bookmark-note">Private note <span>Optional</span></label>
+              <textarea id="bookmark-note" name="note" placeholder="What is worth remembering here?" rows={3} />
+              <button className="line-button line-button--dark" type="submit" disabled={isPending}><span>{isPending ? 'Saving…' : 'Save website'}</span><span className="line-button__icon" aria-hidden="true">+</span></button>
+            </form>
+          )}
+          {!pendingBookmark?.id && <p className="collection-warning">This preview website must be added through Payload before it can be saved.</p>}
+          {pendingBookmark?.id && initialBookmarks.some((bookmark) => bookmark.websiteID === pendingBookmark.id) && (
+            <div className="saved-placements">
+              <p className="filter-label">Already saved in</p>
+              {initialBookmarks.filter((bookmark) => bookmark.websiteID === pendingBookmark.id).map((bookmark) => (
+                <div key={bookmark.id}>
+                  <span>{collections.find((collection) => collection.id === bookmark.collectionID)?.name || 'Collection'}</span>
+                  <button type="button" onClick={() => handleRemoveBookmark(bookmark.id)} disabled={isPending}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="collection-divider"><span>New collection</span></div>
+          <form className="auth-form collection-create-form" onSubmit={handleCreateCollection}>
+            <label htmlFor="collection-name">Name</label><input id="collection-name" name="name" type="text" placeholder="e.g. Strong product pages" required />
+            <label htmlFor="collection-description">Description <span>Optional</span></label><input id="collection-description" name="description" type="text" placeholder="What are you collecting?" />
+            <button className="line-button" type="submit" disabled={isPending}><span>Create collection</span><span className="line-button__icon" aria-hidden="true">+</span></button>
+          </form>
+          <p className="auth-note" aria-live="polite">{bookmarkMessage || 'Collections are private by default.'}</p>
+        </div>
       </dialog>
     </>
   )

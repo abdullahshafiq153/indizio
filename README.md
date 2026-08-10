@@ -10,16 +10,25 @@ The Next.js application for [indizio.space](https://indizio.space): a curated in
 
 The approved palette is intentionally restricted to black, white, and `#f7f7f7`. Visual variation comes from line work, scale, spacing, grid texture, and typography.
 
-The current V1 uses generated typographic brand panels rather than storefront screenshots. All entries are fictional seed data ready to be replaced by Payload CMS queries.
+The current V1 uses generated typographic brand panels rather than storefront screenshots. The bundled fictional entries are used as a safe fallback until MongoDB is configured and can also be seeded into Payload.
 
 ## Local development
 
 ```bash
 pnpm install
+copy .env.example .env.local
 pnpm dev
 ```
 
-Open `http://localhost:3000`. Search, filters, industry jumps, detail dialogs, mobile navigation, bookmarks, account gating, load-more behavior, and the newsletter confirmation state are interactive.
+Set `DATABASE_URL` to a MongoDB Atlas connection string and replace `PAYLOAD_SECRET` with a long random value. Add `BEEHIIV_API_KEY` and `BEEHIIV_PUBLICATION_ID` to enable newsletter subscriptions.
+
+Open `http://localhost:3000`. The Payload admin is at `http://localhost:3000/admin`; the first administrator can be created there. Load the starter website records after connecting MongoDB:
+
+```bash
+pnpm seed
+```
+
+Search, filters, industry jumps, detail dialogs, mobile navigation, real member accounts, multi-collection bookmarks, private bookmark notes, saved-collection filtering, and Beehiiv enrollment are implemented.
 
 ## Checks
 
@@ -29,9 +38,10 @@ pnpm lint
 pnpm build
 ```
 
-## Next integrations
+## Application structure
 
-- Payload CMS with MongoDB Atlas
-- Persistent authentication and saved websites
-- Beehiiv newsletter subscription endpoint
-- CMS-managed website entries and editorial research
+- Payload CMS + MongoDB for websites, taxonomy, curations, CRO articles, administrators, and members
+- HTTP-only cookie authentication through Payload
+- Owner-scoped bookmark collections with visibility, notes, ordering, and duplicate protection
+- Consent-based Beehiiv enrollment during signup and through the standalone newsletter form
+- Seed fallback when no database environment is present, keeping previews and Vercel builds safe

@@ -13,6 +13,15 @@ import { Members } from './collections/Members'
 import { Styles } from './collections/Styles'
 import { Websites } from './collections/Websites'
 
+const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+const trustedVercelOrigins = [
+  process.env.VERCEL_URL,
+  process.env.VERCEL_BRANCH_URL,
+  process.env.VERCEL_PROJECT_PRODUCTION_URL,
+]
+  .filter((hostname): hostname is string => Boolean(hostname))
+  .map((hostname) => `https://${hostname}`)
+
 export default buildConfig({
   bin: [
     { key: 'seed', scriptPath: path.resolve(process.cwd(), 'scripts/seed.ts') },
@@ -36,7 +45,8 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || 'indizio-local-development-secret-change-me',
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
+  serverURL,
+  csrf: [...new Set([serverURL, ...trustedVercelOrigins])],
   typescript: {
     outputFile: './payload-types.ts',
   },

@@ -11,6 +11,10 @@ export type MemberSummary = { id: string; email: string; name: string }
 export type BookmarkCollectionSummary = { id: string; name: string; count: number }
 export type SavedBookmarkSummary = { id: string; websiteID: string; collectionID: string }
 
+function relationshipID(value: string | number | { id: string | number }): string {
+  return String(typeof value === 'object' ? value.id : value)
+}
+
 async function loadHomeData(): Promise<{
   sites: Site[]
   member: MemberSummary | null
@@ -70,8 +74,8 @@ async function loadHomeData(): Promise<{
 
     const bookmarks = bookmarkResult.docs.map((bookmark) => ({
       id: String(bookmark.id),
-      websiteID: String(bookmark.website),
-      collectionID: String(bookmark.collection),
+      websiteID: relationshipID(bookmark.website),
+      collectionID: relationshipID(bookmark.collection),
     }))
 
     return {

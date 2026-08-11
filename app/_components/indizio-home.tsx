@@ -537,8 +537,20 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
         <div className="bookmark-toast" role="status" aria-live="polite">
           <span className="bookmark-toast__icon" aria-hidden="true"><BookmarkIcon filled={Boolean(bookmarkToast.saved || bookmarkToast.bookmarkID)} /></span>
           <p>{bookmarkToast.message}</p>
-          {bookmarkToast.bookmarkID && bookmarkToast.websiteID && (
-            <button type="button" onClick={() => openCollectionChanger(bookmarkToast.bookmarkID!, bookmarkToast.websiteID!)}>Change collection</button>
+          {(bookmarkToast.saved || bookmarkToast.bookmarkID) && bookmarkToast.websiteID && (
+            <button
+              type="button"
+              disabled={!bookmarkToast.bookmarkID}
+              aria-busy={!bookmarkToast.bookmarkID}
+              onClick={() => {
+                if (bookmarkToast.bookmarkID && bookmarkToast.websiteID) {
+                  openCollectionChanger(bookmarkToast.bookmarkID, bookmarkToast.websiteID)
+                }
+              }}
+            >
+              {!bookmarkToast.bookmarkID && <span className="bookmark-toast__loader" aria-hidden="true" />}
+              <span>Change collection</span>
+            </button>
           )}
           <button className="bookmark-toast__close" type="button" aria-label="Dismiss notification" onClick={() => setBookmarkToast(null)}>×</button>
         </div>

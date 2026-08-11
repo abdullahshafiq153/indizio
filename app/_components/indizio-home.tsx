@@ -148,6 +148,17 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     setVisible(initialVisible)
   }
 
+  const toggleIndustry = (industry: string) => {
+    setIndustries((current) => {
+      const next = new Set(current)
+      if (next.has(industry)) next.delete(industry)
+      else next.add(industry)
+      return next
+    })
+    setSavedOnly(false)
+    setVisible(initialVisible)
+  }
+
   const openAuth = (site: Site | null = null) => {
     setPendingBookmark(site)
     setAuthMessage('')
@@ -312,24 +323,15 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               <span className="visually-hidden">Search websites</span><span aria-hidden="true">⌕</span>
               <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(initialVisible) }} placeholder="Search by brand, industry, or observation" autoComplete="off" />
             </label>
-            <button className="filter-trigger" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
+            {isLibraryPage && <button className="filter-trigger" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
               Filters <span>{industries.size}</span><span aria-hidden="true">＋</span>
-            </button>
+            </button>}
           </div>
 
-          <div className="filter-panel" hidden={!filtersOpen}>
+          {isLibraryPage && <div className="filter-panel" hidden={!filtersOpen}>
             <div><p className="filter-label">Industry</p><div className="filter-options">
               {industryOptions.map((industry) => (
-                <button className={`filter-chip${industries.has(industry) ? ' active' : ''}`} type="button" key={industry} onClick={() => {
-                  setIndustries((current) => {
-                    const next = new Set(current)
-                    if (next.has(industry)) next.delete(industry)
-                    else next.add(industry)
-                    return next
-                  })
-                  setSavedOnly(false)
-                  setVisible(initialVisible)
-                }}>{industry}</button>
+                <button className={`filter-chip${industries.has(industry) ? ' active' : ''}`} type="button" key={industry} onClick={() => toggleIndustry(industry)}>{industry}</button>
               ))}
             </div></div>
             {authenticated && collections.length > 0 && <div><p className="filter-label">Saved collections</p><div className="filter-options">
@@ -339,9 +341,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               ))}
             </div></div>}
             <button className="text-button" type="button" onClick={resetFilters}>Clear all</button>
-          </div>
+          </div>}
 
-          <div className="results-meta">
+          <div className={`library-body${isLibraryPage ? '' : ' library-body--with-filters'}`}>
+          <div className="library-results"><div className="results-meta">
             <p>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</p>
             <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
           </div>
@@ -384,6 +387,17 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             </div>
           </div>}
           {isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
+          </div>
+          {!isLibraryPage && <aside className="filter-sidebar" aria-label="Filter websites by industry">
+            <div className="filter-sidebar__head"><p className="filter-label">Industries</p>{industries.size > 0 && <button className="text-button" type="button" onClick={resetFilters}>Clear</button>}</div>
+            <div className="filter-sidebar__options">
+              {industryOptions.map((industry) => <label className="sidebar-filter" key={industry}>
+                <input type="checkbox" checked={industries.has(industry)} onChange={() => toggleIndustry(industry)} />
+                <span>{industry}</span>
+              </label>)}
+            </div>
+          </aside>}
+          </div>
         </section>
 
         {!isLibraryPage && <><section className="stat-strip" aria-label="Library statistics">

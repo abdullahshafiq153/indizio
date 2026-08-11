@@ -144,6 +144,8 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
   useEffect(() => {
     if (!bookmarkToast) return
+    const isBookmarkStillSaving = bookmarkToast.saved && bookmarkToast.websiteID && !bookmarkToast.bookmarkID
+    if (isBookmarkStillSaving) return
     const timeout = window.setTimeout(() => setBookmarkToast(null), 6500)
     return () => window.clearTimeout(timeout)
   }, [bookmarkToast])

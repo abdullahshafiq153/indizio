@@ -74,7 +74,7 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .hero-path__cta { padding-top: 14px; border-top: 1px solid currentColor; display: flex; align-items: center; justify-content: space-between; font: 500 9px/1 var(--font-dm-mono), monospace; text-transform: uppercase; }
 .hero-path__cta i { font-size: 16px; font-style: normal; transition: transform .2s ease; }
 .hero-path:hover .hero-path__cta i { transform: translate(3px, -3px); }
-.hero-paths.hero-paths--explore { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 0 44px 44px; overflow: visible; scroll-snap-type: none; }
+.hero-paths.hero-paths--explore { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 0 44px 44px; border-top: 0; overflow: visible; scroll-snap-type: none; }
 .hero-paths--explore .hero-path { min-height: 250px; padding: 28px; border: 1px solid var(--rule); }
 .explore-section { padding-top: clamp(74px, 8vw, 118px); }
 .explore-section__heading { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, .75fr); align-items: end; gap: 64px; padding: 0 44px clamp(60px, 7vw, 96px); }

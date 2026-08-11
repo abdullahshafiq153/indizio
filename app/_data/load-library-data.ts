@@ -6,7 +6,7 @@ import { sites as fallbackSites, type Site } from './sites'
 
 export type MemberSummary = { id: string; email: string; name: string }
 export type BookmarkCollectionSummary = { id: string; name: string; count: number }
-export type SavedBookmarkSummary = { id: string; websiteID: string; collectionID: string }
+export type SavedBookmarkSummary = { id: string; websiteID: string; collectionID: string | null }
 
 export type LibraryData = {
   sites: Site[]
@@ -29,9 +29,9 @@ type WebsiteSelection = {
   featuredRank?: number | null
 }
 type FolderSelection = { id: string | number; name: string }
-type BookmarkSelection = { id: string | number; website: RelationshipValue; folder: RelationshipValue }
+type BookmarkSelection = { id: string | number; website: RelationshipValue; folder?: RelationshipValue | null }
 
-function relationshipID(value: string | number | { id: string | number }): string {
+function relationshipID(value: RelationshipValue): string {
   return String(typeof value === 'object' ? value.id : value)
 }
 
@@ -118,7 +118,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
     const bookmarks = bookmarkDocs.map((bookmark) => ({
       id: String(bookmark.id),
       websiteID: relationshipID(bookmark.website),
-      collectionID: relationshipID(bookmark.folder),
+      collectionID: bookmark.folder ? relationshipID(bookmark.folder) : null,
     }))
 
     return {

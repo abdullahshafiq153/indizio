@@ -15,17 +15,17 @@ export const Bookmarks: CollectionConfig = {
     beforeChange: [async ({ data, req }) => {
       if (req.user?.collection !== 'members') return data
 
-      const folderID = typeof data?.folder === 'object' ? data.folder.id : data?.folder
-      if (!folderID) throw new Error('Choose a collection before saving this website.')
-
-      const folder = await req.payload.findByID({
-        collection: 'bookmark-collections',
-        id: folderID,
-        overrideAccess: false,
-        req,
-      })
-      const ownerID = typeof folder.owner === 'object' ? folder.owner.id : folder.owner
-      if (ownerID !== req.user.id) throw new Error('You can only save into your own collections.')
+      const folderID = data?.folder && typeof data.folder === 'object' ? data.folder.id : data?.folder
+      if (folderID) {
+        const folder = await req.payload.findByID({
+          collection: 'bookmark-collections',
+          id: folderID,
+          overrideAccess: false,
+          req,
+        })
+        const ownerID = typeof folder.owner === 'object' ? folder.owner.id : folder.owner
+        if (String(ownerID) !== String(req.user.id)) throw new Error('You can only save into your own collections.')
+      }
 
       return { ...data, owner: req.user.id }
     }],
@@ -35,7 +35,7 @@ export const Bookmarks: CollectionConfig = {
   ],
   fields: [
     { name: 'owner', type: 'relationship', relationTo: 'members', required: true, index: true },
-    { name: 'folder', type: 'relationship', relationTo: 'bookmark-collections', required: true, index: true },
+    { name: 'folder', type: 'relationship', relationTo: 'bookmark-collections', index: true },
     { name: 'website', type: 'relationship', relationTo: 'websites', required: true, index: true },
     { name: 'note', type: 'textarea' },
     { name: 'position', type: 'number', defaultValue: 0 },

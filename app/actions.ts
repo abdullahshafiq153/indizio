@@ -13,6 +13,12 @@ export type ActionResult = {
   message: string
 }
 
+export type BookmarkActionResult = ActionResult & {
+  bookmarkID?: string
+  collectionID?: string | null
+  collectionName?: string
+}
+
 const unavailable = (): ActionResult => ({
   ok: false,
   message: 'Accounts are being connected. Please try again shortly.',
@@ -127,36 +133,184 @@ export async function createBookmarkCollection(formData: FormData): Promise<Acti
       overrideAccess: false,
       user: session.user,
     })
-    revalidatePath('/')
+    revalidateBookmarkPages()
     return { ok: true, message: 'Collection created.', id: String(folder.id) }
   } catch {
     return { ok: false, message: 'We could not create that collection.' }
   }
 }
 
-export async function saveBookmark(formData: FormData): Promise<ActionResult> {
+function revalidateBookmarkPages() {
+  revalidatePath('/')
+  revalidatePath('/library')
+  revalidatePath('/bookmarks')
+}
+
+export async function saveBookmark(formData: FormData): Promise<BookmarkActionResult> {
   const session = await currentMember()
   if (!session) return { ok: false, message: 'Sign in to save websites.' }
 
   const website = value(formData, 'website')
   const collection = value(formData, 'collection')
   const note = value(formData, 'note')
-  if (!website || !collection) return { ok: false, message: 'Choose a collection first.' }
+  if (!website) return { ok: false, message: 'This website is not ready to be saved.' }
 
   try {
-    await session.payload.create({
+    const existing = await session.payload.find({
       collection: 'bookmarks',
-      data: { owner: session.user.id, website, folder: collection, note },
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      user: session.user,
+      where: {
+        and: [
+          { owner: { equals: session.user.id } },
+          { website: { equals: website } },
+        ],
+      },
+    })
+
+    if (existing.docs[0]) {
+      const bookmark = existing.docs[0]
+      const folderID = typeof bookmark.folder === 'object' ? bookmark.folder?.id : bookmark.folder
+      let collectionName = 'All Bookmarks'
+      if (folderID) {
+        const folder = await session.payload.findByID({
+          collection: 'bookmark-collections',
+          id: folderID,
+          overrideAccess: false,
+          user: session.user,
+        })
+        collectionName = folder.name
+      }
+      return {
+        ok: true,
+        message: `Already saved to ${collectionName}.`,
+        bookmarkID: String(bookmark.id),
+        collectionID: folderID ? String(folderID) : null,
+        collectionName,
+      }
+    }
+
+    const bookmark = await session.payload.create({
+      collection: 'bookmarks',
+      data: {
+        owner: session.user.id,
+        website,
+        ...(collection ? { folder: collection } : {}),
+        ...(note ? { note } : {}),
+      },
       overrideAccess: false,
       user: session.user,
     })
-    revalidatePath('/')
-    return { ok: true, message: 'Saved to your collection.' }
+    revalidateBookmarkPages()
+    return {
+      ok: true,
+      message: collection ? 'Saved to your collection.' : 'Saved to All Bookmarks.',
+      bookmarkID: String(bookmark.id),
+      collectionID: collection || null,
+      collectionName: collection ? 'Collection' : 'All Bookmarks',
+    }
   } catch (error) {
     const text = error instanceof Error ? error.message : ''
-    return /duplicate/i.test(text)
-      ? { ok: true, message: 'This website is already in that collection.' }
-      : { ok: false, message: text || 'We could not save this website.' }
+    return { ok: false, message: text || 'We could not save this website.' }
+  }
+}
+
+export async function moveBookmark(formData: FormData): Promise<BookmarkActionResult> {
+  const session = await currentMember()
+  if (!session) return { ok: false, message: 'Sign in to organize saved websites.' }
+
+  const bookmark = value(formData, 'bookmark')
+  const collection = value(formData, 'collection')
+  if (!bookmark) return { ok: false, message: 'Choose a bookmark to organize.' }
+
+  try {
+    let collectionName = 'All Bookmarks'
+    if (collection) {
+      const folder = await session.payload.findByID({
+        collection: 'bookmark-collections',
+        id: collection,
+        overrideAccess: false,
+        user: session.user,
+      })
+      collectionName = folder.name
+    }
+
+    await session.payload.update({
+      collection: 'bookmarks',
+      id: bookmark,
+      data: { folder: collection || null },
+      overrideAccess: false,
+      user: session.user,
+    })
+    revalidateBookmarkPages()
+    return {
+      ok: true,
+      message: `Saved to ${collectionName}.`,
+      bookmarkID: bookmark,
+      collectionID: collection || null,
+      collectionName,
+    }
+  } catch {
+    return { ok: false, message: 'We could not change that collection.' }
+  }
+}
+
+export async function renameBookmarkCollection(formData: FormData): Promise<ActionResult> {
+  const session = await currentMember()
+  if (!session) return { ok: false, message: 'Sign in to manage collections.' }
+  const collection = value(formData, 'collection')
+  const name = value(formData, 'name')
+  if (!collection || name.length < 2) return { ok: false, message: 'Enter a collection name.' }
+
+  try {
+    await session.payload.update({
+      collection: 'bookmark-collections',
+      id: collection,
+      data: { name },
+      overrideAccess: false,
+      user: session.user,
+    })
+    revalidateBookmarkPages()
+    return { ok: true, message: 'Collection renamed.' }
+  } catch {
+    return { ok: false, message: 'We could not rename that collection.' }
+  }
+}
+
+export async function deleteBookmarkCollection(formData: FormData): Promise<ActionResult> {
+  const session = await currentMember()
+  if (!session) return { ok: false, message: 'Sign in to manage collections.' }
+  const collection = value(formData, 'collection')
+  if (!collection) return { ok: false, message: 'Choose a collection to delete.' }
+
+  try {
+    const bookmarks = await session.payload.find({
+      collection: 'bookmarks',
+      depth: 0,
+      limit: 500,
+      overrideAccess: false,
+      user: session.user,
+      where: { folder: { equals: collection } },
+    })
+    await Promise.all(bookmarks.docs.map((bookmark) => session.payload.update({
+      collection: 'bookmarks',
+      id: bookmark.id,
+      data: { folder: null },
+      overrideAccess: false,
+      user: session.user,
+    })))
+    await session.payload.delete({
+      collection: 'bookmark-collections',
+      id: collection,
+      overrideAccess: false,
+      user: session.user,
+    })
+    revalidateBookmarkPages()
+    return { ok: true, message: 'Collection deleted. Its websites remain in All Bookmarks.' }
+  } catch {
+    return { ok: false, message: 'We could not delete that collection.' }
   }
 }
 
@@ -172,7 +326,7 @@ export async function removeBookmark(formData: FormData): Promise<ActionResult> 
       overrideAccess: false,
       user: session.user,
     })
-    revalidatePath('/')
+    revalidateBookmarkPages()
     return { ok: true, message: 'Bookmark removed.' }
   } catch {
     return { ok: false, message: 'We could not remove that bookmark.' }

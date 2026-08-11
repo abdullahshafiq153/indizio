@@ -22,6 +22,29 @@ import type { Site } from '../_data/sites'
 
 type SortMode = 'featured' | 'newest' | 'az'
 
+const INDUSTRIES = [
+  'Apparel',
+  'Beauty',
+  'Beverage',
+  'Bicycle',
+  'Cookware',
+  'Everyday Carry',
+  'Fitness',
+  'Flower',
+  'Food',
+  'Furniture',
+  'Hair Care',
+  'Health & Wellness',
+  'Home',
+  'Jewelry',
+  'Kids',
+  'Lifestyle',
+  'Luggage',
+  'Personal Care',
+  'Pet',
+  'Swimsuit',
+] as const
+
 function ExternalIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -82,9 +105,14 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   )
 
   const industryOptions = useMemo(
-    () => [...new Set(initialSites.map((site) => site.industry))].sort(),
+    () => [...new Set([...INDUSTRIES, ...initialSites.map((site) => site.industry)])].sort(),
     [initialSites],
   )
+  const industryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const site of initialSites) counts.set(site.industry, (counts.get(site.industry) || 0) + 1)
+    return counts
+  }, [initialSites])
 
   const filteredSites = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -256,17 +284,16 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <Link href="/#index-report">Research</Link>
           <Link href="/#about">About</Link>
         </nav>
-        <div className="account-controls">
-          {authenticated && (
+        {authenticated && (
+          <div className="account-controls">
             <button className="bookmark-collection" type="button" onClick={openSaved} aria-label={`View ${savedWebsiteIDs.size} saved websites`}>
               <BookmarkIcon /> <span>{savedWebsiteIDs.size}</span>
             </button>
-          )}
-          <button className="account-button" type="button" onClick={handleAccount} disabled={isPending}>{authenticated ? 'Log out' : 'Log in'}</button>
-        </div>
-        <Link className="line-button line-button--dark header-cta" href="/#newsletter">
-          <span>Get the fieldnotes</span><span className="line-button__icon" aria-hidden="true">↗</span>
-        </Link>
+          </div>
+        )}
+        <button className="line-button header-cta" type="button" onClick={handleAccount} disabled={isPending}>
+          <span>{authenticated ? 'Log out' : 'Login / Register'}</span><span className="line-button__icon" aria-hidden="true">→</span>
+        </button>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
 
@@ -341,14 +368,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
 
           <div className="card-grid" aria-live="polite">
-            {filteredSites.slice(0, visible).map((site, index) => {
+            {filteredSites.slice(0, visible).map((site) => {
               const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
               return (
                 <article className="site-card" key={site.name}>
                   <div className="card-visual">
                     <button className="card-open" type="button" onClick={() => { setSelectedSite(site); siteDialogRef.current?.showModal() }} aria-label={`Open ${site.name} fieldnote`}>
                       {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 760px) 100vw, (max-width: 1100px) 50vw, 33vw" unoptimized />}
-                      <span className="card-index">{String(index + 1).padStart(2, '0')} / {site.industry.toUpperCase()}</span>
                       {!site.coverImage && <span className="card-mark">{site.name}</span>}
                     </button>
                   </div>
@@ -366,31 +392,45 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
           {filteredSites.length === 0 && <div className="empty-state"><p>No signals found.</p><button className="text-button" type="button" onClick={resetFilters}>Reset the library</button></div>}
           {!isLibraryPage && visible < filteredSites.length && <div className="load-more-wrap"><button className="line-button" type="button" onClick={() => setVisible((count) => count + 6)}><span>Load more websites</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
-          {isLibraryPage && visible < filteredSites.length && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status"><span className="infinite-scroll-mark" aria-hidden="true" />Loading more websites</div>}
+          {isLibraryPage && visible < filteredSites.length && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status">
+            <span className="visually-hidden">Loading more websites</span>
+            <div className="card-grid skeleton-grid skeleton-grid--more" aria-hidden="true">
+              {[0, 1, 2].map((item) => (
+                <article className="skeleton-card" key={item}>
+                  <span className="skeleton-block skeleton-card__visual" />
+                  <span className="skeleton-block skeleton-card__title" />
+                  <span className="skeleton-block skeleton-card__detail" />
+                </article>
+              ))}
+            </div>
+          </div>}
           {isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
         </section>
 
         {!isLibraryPage && <><section className="stat-strip" aria-label="Library statistics">
-          <div><strong>001</strong><span>Edition</span></div><div><strong>{String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>08</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
+          <div><strong>001</strong><span>Edition</span></div><div><strong>{String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
         </section>
 
         <section className="industry-section ruled-section" id="industries">
           <div className="section-heading section-heading--compact"><div><p className="eyebrow">02 / Browse the field</p><h2>Start with an industry.</h2></div></div>
           <div className="industry-list">
-            {[['Fashion', 'Fashion & apparel', '07'], ['Beauty', 'Beauty & wellness', '05'], ['Food', 'Food & beverage', '04'], ['Home', 'Home & objects', '03'], ['Technology', 'Technology', '03'], ['Health', 'Health & supplements', '02']].map(([value, label, count]) => (
-              <button type="button" key={value} onClick={() => jumpToIndustry(value)}><span>{label}</span><strong>{count}</strong><i>↗</i></button>
+            {INDUSTRIES.map((industry) => (
+              <button type="button" key={industry} onClick={() => jumpToIndustry(industry)}><span>{industry}</span><strong>{String(industryCounts.get(industry) || 0).padStart(2, '0')}</strong><i>↗</i></button>
             ))}
           </div>
         </section>
 
+        <section className="about ruled-section" id="about"><p className="eyebrow">About the work</p><p>INDIZIO means “a clue” in Italian. This is a record of the clues hiding in plain sight across modern commerce—the small choices that shape how people understand, trust, and buy from a brand.</p></section></>}
+
         <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>What 100 storefronts tell us about ecommerce now.</h2><p>The first Indizio Index maps the design decisions, trust signals, and merchandising patterns appearing across twelve industries.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>
 
-        <section className="about ruled-section" id="about"><p className="eyebrow">About the work</p><p>INDIZIO means “a clue” in Italian. This is a record of the clues hiding in plain sight across modern commerce—the small choices that shape how people understand, trust, and buy from a brand.</p></section>
-
-        <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section></>}
+        {!isLibraryPage && <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
       </main>
 
-      <footer className="site-footer"><div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div></footer>
+      <footer className="site-footer">
+        {isLibraryPage && <section className="newsletter newsletter--footer" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="footer-email">Email address</label><input id="footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
+        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
+      </footer>
 
       <dialog className="site-dialog" ref={siteDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
         <button className="dialog-close" type="button" aria-label="Close" onClick={() => siteDialogRef.current?.close()}>×</button>

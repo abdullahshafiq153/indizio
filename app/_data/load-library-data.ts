@@ -19,6 +19,17 @@ function relationshipID(value: string | number | { id: string | number }): strin
   return String(typeof value === 'object' ? value.id : value)
 }
 
+function coverURL(cover: unknown, legacyURL?: string | null): string | undefined {
+  if (cover && typeof cover === 'object') {
+    const media = cover as {
+      sizes?: { card?: { url?: string | null } | null } | null
+      url?: string | null
+    }
+    return media.sizes?.card?.url || media.url || legacyURL || undefined
+  }
+  return legacyURL || undefined
+}
+
 export async function loadLibraryData(): Promise<LibraryData> {
   if (!process.env.DATABASE_URL) {
     return { sites: fallbackSites, member: null, collections: [], bookmarks: [] }
@@ -42,7 +53,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
       id: String(website.id),
       slug: website.slug,
       name: website.name,
-      coverImage: website.coverImage,
+      coverImage: coverURL(website.cover, website.coverImage),
       industry: typeof website.industry === 'object' && website.industry ? website.industry.name : 'Ecommerce',
       style: website.styles?.map((style: { name: string } | string | number) => typeof style === 'object' ? style.name : '').filter(Boolean).join(' / ') || 'Unclassified',
       note: website.note || '',

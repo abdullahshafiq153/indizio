@@ -287,16 +287,18 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <Link href="/#index-report">Research</Link>
           <Link href="/#about">About</Link>
         </nav>
-        {authenticated && (
-          <div className="account-controls">
-            <button className="bookmark-collection" type="button" onClick={openSaved} aria-label={`View ${savedWebsiteIDs.size} saved websites`}>
-              <BookmarkIcon /> <span>{savedWebsiteIDs.size}</span>
-            </button>
-          </div>
-        )}
-        <button className="line-button header-cta" type="button" onClick={handleAccount} disabled={isPending}>
-          <span>{authenticated ? 'Log out' : 'Login / Register'}</span><span className="line-button__icon" aria-hidden="true">→</span>
-        </button>
+        <div className="header-actions">
+          {authenticated && (
+            <div className="account-controls">
+              <button className="bookmark-collection" type="button" onClick={openSaved} aria-label={`View ${savedWebsiteIDs.size} saved websites`}>
+                <BookmarkIcon /> <span>{savedWebsiteIDs.size}</span>
+              </button>
+            </div>
+          )}
+          <button className="line-button header-cta" type="button" onClick={handleAccount} disabled={isPending}>
+            <span>{authenticated ? 'Log out' : 'Login / Register'}</span><span className="line-button__icon" aria-hidden="true">→</span>
+          </button>
+        </div>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
 

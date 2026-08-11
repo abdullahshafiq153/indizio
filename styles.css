@@ -94,7 +94,7 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .section-heading > p { max-width: 390px; margin: 0 0 5px auto; font-size: 17px; line-height: 1.5; color: var(--muted); }
 .section-heading--compact { grid-template-columns: 1fr; margin-bottom: 50px; }
 .library-tools { display: grid; grid-template-columns: 1fr auto; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
-.library--home .library-tools { grid-template-columns: 1fr; border-top: 0; }
+.library--home .library-tools { grid-template-columns: 1fr; }
 .search-field { min-height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 18px; }
 .search-field > span { font-size: 22px; }
 .search-field input { width: 100%; border: 0; outline: 0; background: transparent; font-size: 14px; }

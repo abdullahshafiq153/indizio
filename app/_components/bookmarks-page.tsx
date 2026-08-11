@@ -148,6 +148,18 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
   const handleMoveBookmark = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
+    const bookmarkID = String(data.get('bookmark') || '')
+    const nextCollectionID = String(data.get('collection') || '') || null
+    const previousBookmark = bookmarks.find((bookmark) => bookmark.id === bookmarkID)
+    const nextCollectionName = collectionName(nextCollectionID)
+
+    setBookmarks((current) => current.map((bookmark) => bookmark.id === bookmarkID
+      ? { ...bookmark, collectionID: nextCollectionID }
+      : bookmark))
+    setMessage(`Saved to ${nextCollectionName}.`)
+    collectionDialogRef.current?.close()
+    setActiveBookmarkID(null)
+
     startTransition(async () => {
       const result = await moveBookmark(data)
       setMessage(result.message)
@@ -155,19 +167,31 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
         setBookmarks((current) => current.map((bookmark) => bookmark.id === result.bookmarkID
           ? { ...bookmark, collectionID: result.collectionID || null }
           : bookmark))
-        collectionDialogRef.current?.close()
-        setActiveBookmarkID(null)
+      } else if (previousBookmark) {
+        setBookmarks((current) => current.map((bookmark) => bookmark.id === previousBookmark.id
+          ? previousBookmark
+          : bookmark))
       }
     })
   }
 
-  const handleRemoveBookmark = (bookmarkID: string) => {
+  const handleRemoveBookmark = (bookmark: SavedBookmarkSummary) => {
+    const originalIndex = bookmarks.findIndex((item) => item.id === bookmark.id)
+    setBookmarks((current) => current.filter((item) => item.id !== bookmark.id))
+    setMessage('Bookmark removed.')
+
     const data = new FormData()
-    data.set('bookmark', bookmarkID)
+    data.set('bookmark', bookmark.id)
     startTransition(async () => {
       const result = await removeBookmark(data)
       setMessage(result.message)
-      if (result.ok) setBookmarks((current) => current.filter((bookmark) => bookmark.id !== bookmarkID))
+      if (!result.ok) {
+        setBookmarks((current) => {
+          if (current.some((item) => item.id === bookmark.id)) return current
+          const insertAt = Math.max(0, Math.min(originalIndex, current.length))
+          return [...current.slice(0, insertAt), bookmark, ...current.slice(insertAt)]
+        })
+      }
     })
   }
 
@@ -273,9 +297,9 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
                         <div className="card-meta">
                           <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                             <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name}`}><ExternalIcon /></a>
-                            <button className="card-action" type="button" onClick={() => openCollectionDialog(bookmark.id)} aria-label={`Change collection for ${site.name}`}><BookmarkIcon /></button>
+                            <button className="card-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${site.name} from bookmarks`} title="Remove bookmark"><BookmarkIcon /></button>
                           </div></div>
-                          <div className="bookmark-card-detail"><span>{collectionName(bookmark.collectionID)}</span><button type="button" onClick={() => handleRemoveBookmark(bookmark.id)} disabled={isPending}>Remove</button></div>
+                          <div className="bookmark-card-detail"><span>{collectionName(bookmark.collectionID)}</span><button type="button" onClick={() => openCollectionDialog(bookmark.id)}>Edit</button></div>
                         </div>
                       </article>
                     )

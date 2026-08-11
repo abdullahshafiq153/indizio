@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState, useTransition } from '
 import {
   createBookmarkCollection,
   moveBookmark,
+  removeBookmark,
   saveBookmark,
   signIn,
   signOut,
@@ -92,6 +93,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [activeBookmarkID, setActiveBookmarkID] = useState<string | null>(null)
   const [bookmarkMessage, setBookmarkMessage] = useState('')
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToast>(null)
+  const [bookmarkToastExiting, setBookmarkToastExiting] = useState(false)
   const [bookmarks, setBookmarks] = useState(initialBookmarks)
   const [collections, setCollections] = useState(initialCollections)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -110,6 +112,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const bookmarkDialogRef = useRef<HTMLDialogElement>(null)
   const infiniteScrollRef = useRef<HTMLDivElement>(null)
   const siteDialogRef = useRef<HTMLDialogElement>(null)
+  const toastDismissTimeoutRef = useRef<number | null>(null)
 
   const authenticated = Boolean(initialMember)
   const savedWebsiteIDs = useMemo(
@@ -142,13 +145,40 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     })
   }, [industries, initialSites, query, savedOnly, selectedCollectionWebsiteIDs, sort])
 
+  const showBookmarkToast = (toast: Exclude<BookmarkToast, null>) => {
+    if (toastDismissTimeoutRef.current) window.clearTimeout(toastDismissTimeoutRef.current)
+    setBookmarkToastExiting(false)
+    setBookmarkToast(toast)
+  }
+
+  const dismissBookmarkToast = () => {
+    if (toastDismissTimeoutRef.current) window.clearTimeout(toastDismissTimeoutRef.current)
+    setBookmarkToastExiting(true)
+    toastDismissTimeoutRef.current = window.setTimeout(() => {
+      setBookmarkToast(null)
+      setBookmarkToastExiting(false)
+      toastDismissTimeoutRef.current = null
+    }, 220)
+  }
+
   useEffect(() => {
     if (!bookmarkToast) return
     const isBookmarkStillSaving = bookmarkToast.saved && bookmarkToast.websiteID && !bookmarkToast.bookmarkID
     if (isBookmarkStillSaving) return
-    const timeout = window.setTimeout(() => setBookmarkToast(null), 6500)
+    const timeout = window.setTimeout(() => {
+      setBookmarkToastExiting(true)
+      toastDismissTimeoutRef.current = window.setTimeout(() => {
+        setBookmarkToast(null)
+        setBookmarkToastExiting(false)
+        toastDismissTimeoutRef.current = null
+      }, 220)
+    }, 6500)
     return () => window.clearTimeout(timeout)
   }, [bookmarkToast])
+
+  useEffect(() => () => {
+    if (toastDismissTimeoutRef.current) window.clearTimeout(toastDismissTimeoutRef.current)
+  }, [])
 
   useEffect(() => {
     if (!isLibraryPage || visible >= filteredSites.length) return
@@ -204,19 +234,35 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       return
     }
     if (!site.id) {
-      setBookmarkToast({ message: 'This preview website is not ready to be saved.' })
+      showBookmarkToast({ message: 'This preview website is not ready to be saved.' })
       return
     }
 
     const existing = bookmarks.find((bookmark) => bookmark.websiteID === site.id)
     if (existing) {
-      const collectionName = collections.find((collection) => collection.id === existing.collectionID)?.name || 'All Bookmarks'
-      setBookmarkToast({
-        bookmarkID: existing.id,
-        collectionID: existing.collectionID,
-        message: `Already saved to ${collectionName}.`,
-        saved: true,
+      setBookmarks((current) => current.filter((bookmark) => bookmark.id !== existing.id))
+      showBookmarkToast({
+        message: 'Removed from bookmarks.',
+        saved: false,
         websiteID: site.id,
+      })
+
+      const data = new FormData()
+      data.set('bookmark', existing.id)
+      startTransition(async () => {
+        const result = await removeBookmark(data)
+        if (!result.ok) {
+          setBookmarks((current) => current.some((bookmark) => bookmark.id === existing.id)
+            ? current
+            : [existing, ...current])
+          showBookmarkToast({
+            bookmarkID: existing.id,
+            collectionID: existing.collectionID,
+            message: result.message,
+            saved: true,
+            websiteID: site.id,
+          })
+        }
       })
       return
     }
@@ -227,7 +273,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       websiteID: site.id!,
       collectionID: null,
     }, ...current])
-    setBookmarkToast({
+    showBookmarkToast({
       collectionID: null,
       message: 'Saved to All Bookmarks.',
       saved: true,
@@ -247,7 +293,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       } else {
         setBookmarks((current) => current.filter((bookmark) => bookmark.id !== optimisticID))
       }
-      setBookmarkToast({
+      showBookmarkToast({
         bookmarkID: result.bookmarkID,
         collectionID: result.collectionID,
         message: result.message,
@@ -291,7 +337,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               collectionID: bookmarkResult.collectionID || null,
             }, ...current])
           }
-          setBookmarkToast({
+          showBookmarkToast({
             bookmarkID: bookmarkResult.bookmarkID,
             collectionID: bookmarkResult.collectionID,
             message: bookmarkResult.message,
@@ -331,8 +377,27 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
   const handleChangeCollection = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const form = event.currentTarget
-    const data = new FormData(form)
+    const data = new FormData(event.currentTarget)
+    const bookmarkID = String(data.get('bookmark') || '')
+    const nextCollectionID = String(data.get('collection') || '') || null
+    const previousBookmark = bookmarks.find((bookmark) => bookmark.id === bookmarkID)
+    const websiteID = pendingBookmark?.id
+    const nextCollectionName = collections.find((collection) => collection.id === nextCollectionID)?.name || 'All Bookmarks'
+
+    setBookmarks((current) => current.map((bookmark) => bookmark.id === bookmarkID
+      ? { ...bookmark, collectionID: nextCollectionID }
+      : bookmark))
+    bookmarkDialogRef.current?.close()
+    showBookmarkToast({
+      bookmarkID,
+      collectionID: nextCollectionID,
+      message: `Saved to ${nextCollectionName}.`,
+      saved: true,
+      websiteID,
+    })
+    setActiveBookmarkID(null)
+    setPendingBookmark(null)
+
     startTransition(async () => {
       const result = await moveBookmark(data)
       setBookmarkMessage(result.message)
@@ -340,16 +405,24 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
         setBookmarks((current) => current.map((bookmark) => bookmark.id === result.bookmarkID
           ? { ...bookmark, collectionID: result.collectionID || null }
           : bookmark))
-        bookmarkDialogRef.current?.close()
-        setBookmarkToast({
+        showBookmarkToast({
           bookmarkID: result.bookmarkID,
           collectionID: result.collectionID,
           message: result.message,
-          websiteID: pendingBookmark?.id,
+          saved: true,
+          websiteID,
         })
-        setActiveBookmarkID(null)
-        setPendingBookmark(null)
-        router.refresh()
+      } else if (previousBookmark) {
+        setBookmarks((current) => current.map((bookmark) => bookmark.id === previousBookmark.id
+          ? previousBookmark
+          : bookmark))
+        showBookmarkToast({
+          bookmarkID: previousBookmark.id,
+          collectionID: previousBookmark.collectionID,
+          message: result.message,
+          saved: true,
+          websiteID,
+        })
       }
     })
   }
@@ -467,7 +540,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                   <div className="card-meta">
                     <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                       <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name} website`} title="Visit website"><ExternalIcon /></a>
-                      <button className="card-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Organize saved' : authenticated ? 'Bookmark' : 'Sign up to bookmark'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Saved — change collection' : authenticated ? 'Save website' : 'Sign up to bookmark'}><BookmarkIcon filled={bookmarked} /></button>
+                      <button className="card-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove bookmark from' : authenticated ? 'Bookmark' : 'Sign up to bookmark'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove bookmark' : authenticated ? 'Save website' : 'Sign up to bookmark'}><BookmarkIcon filled={bookmarked} /></button>
                     </div></div>
                     <div className="card-detail-row"><p>{site.industry} · {site.style}</p></div>
                   </div>
@@ -536,7 +609,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       </footer>
 
       {bookmarkToast && (
-        <div className="bookmark-toast" role="status" aria-live="polite">
+        <div className={`bookmark-toast${bookmarkToastExiting ? ' bookmark-toast--exiting' : ''}`} role="status" aria-live="polite">
           <span className="bookmark-toast__icon" aria-hidden="true"><BookmarkIcon filled={Boolean(bookmarkToast.saved || bookmarkToast.bookmarkID)} /></span>
           <p>{bookmarkToast.message}</p>
           {(bookmarkToast.saved || bookmarkToast.bookmarkID) && bookmarkToast.websiteID && (
@@ -554,7 +627,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               <span>Change collection</span>
             </button>
           )}
-          <button className="bookmark-toast__close" type="button" aria-label="Dismiss notification" onClick={() => setBookmarkToast(null)}>×</button>
+          <button className="bookmark-toast__close" type="button" aria-label="Dismiss notification" onClick={dismissBookmarkToast}>×</button>
         </div>
       )}
 

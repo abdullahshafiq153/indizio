@@ -26,6 +26,7 @@ type BookmarkToast = {
   bookmarkID?: string
   collectionID?: string | null
   message: string
+  saved?: boolean
   websiteID?: string
 } | null
 
@@ -212,26 +213,43 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
         bookmarkID: existing.id,
         collectionID: existing.collectionID,
         message: `Already saved to ${collectionName}.`,
+        saved: true,
         websiteID: site.id,
       })
       return
     }
+
+    const optimisticID = `optimistic-${site.id}-${Date.now()}`
+    setBookmarks((current) => [{
+      id: optimisticID,
+      websiteID: site.id!,
+      collectionID: null,
+    }, ...current])
+    setBookmarkToast({
+      collectionID: null,
+      message: 'Saved to All Bookmarks.',
+      saved: true,
+      websiteID: site.id,
+    })
 
     const data = new FormData()
     data.set('website', site.id)
     startTransition(async () => {
       const result = await saveBookmark(data)
       if (result.ok && result.bookmarkID) {
-        setBookmarks((current) => [{
+        setBookmarks((current) => current.map((bookmark) => bookmark.id === optimisticID ? {
           id: result.bookmarkID!,
           websiteID: site.id!,
           collectionID: result.collectionID || null,
-        }, ...current])
+        } : bookmark))
+      } else {
+        setBookmarks((current) => current.filter((bookmark) => bookmark.id !== optimisticID))
       }
       setBookmarkToast({
         bookmarkID: result.bookmarkID,
         collectionID: result.collectionID,
         message: result.message,
+        saved: result.ok,
         websiteID: site.id,
       })
     })
@@ -517,7 +535,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
       {bookmarkToast && (
         <div className="bookmark-toast" role="status" aria-live="polite">
-          <span className="bookmark-toast__icon" aria-hidden="true"><BookmarkIcon filled={Boolean(bookmarkToast.bookmarkID)} /></span>
+          <span className="bookmark-toast__icon" aria-hidden="true"><BookmarkIcon filled={Boolean(bookmarkToast.saved || bookmarkToast.bookmarkID)} /></span>
           <p>{bookmarkToast.message}</p>
           {bookmarkToast.bookmarkID && bookmarkToast.websiteID && (
             <button type="button" onClick={() => openCollectionChanger(bookmarkToast.bookmarkID!, bookmarkToast.websiteID!)}>Change collection</button>

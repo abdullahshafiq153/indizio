@@ -257,7 +257,7 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .saved-placements > div { display: flex; justify-content: space-between; gap: 18px; padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
 .saved-placements button { border: 0; background: transparent; color: var(--muted); font: 500 9px var(--font-dm-mono), monospace; text-transform: uppercase; }
 .saved-placements button:hover { color: var(--ink); }
-.bookmark-toast { position: fixed; right: 24px; bottom: 24px; z-index: 90; width: min(470px, calc(100% - 32px)); min-height: 72px; border: 1px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 rgba(0,0,0,.16); display: grid; grid-template-columns: 36px minmax(0, 1fr) auto 34px; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; }
+.bookmark-toast { position: fixed; right: 24px; bottom: 24px; z-index: 90; width: min(470px, calc(100% - 32px)); min-height: 72px; border: 1px solid var(--ink); background: var(--paper); display: grid; grid-template-columns: 36px minmax(0, 1fr) auto 34px; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; }
 .bookmark-toast__icon { width: 32px; height: 32px; border: 1px solid var(--ink); display: grid; place-items: center; }
 .bookmark-toast__icon svg { width: 14px; height: 14px; }
 .bookmark-toast p { margin: 0; font: 500 11px/1.45 var(--font-dm-mono), monospace; }

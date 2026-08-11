@@ -408,7 +408,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
         {!isLibraryPage && <><section className="explore-section ruled-section" id="industries" aria-labelledby="explore-heading">
           <div className="explore-section__heading">
-            <div><p className="eyebrow">Explore INDIZIO / 04</p><h2 id="explore-heading">Four paths through modern commerce.</h2></div>
+            <div><p className="eyebrow">Explore INDIZIO</p><h2 id="explore-heading">Four paths through modern commerce.</h2></div>
             <p>Move from storefront inspiration to repeatable patterns, original research, and practical ideas worth testing.</p>
           </div>
           <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">

@@ -373,7 +373,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                 <article className="site-card" key={site.name}>
                   <div className="card-visual">
                     <button className="card-open" type="button" onClick={() => { setSelectedSite(site); siteDialogRef.current?.showModal() }} aria-label={`Open ${site.name} fieldnote`}>
-                      {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 760px) 100vw, (max-width: 1100px) 50vw, 33vw" unoptimized />}
+                      {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, (max-width: 1440px) 25vw, 320px" quality={70} />}
                       {!site.coverImage && <span className="card-mark">{site.name}</span>}
                     </button>
                   </div>
@@ -450,7 +450,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
       <dialog className="site-dialog" ref={siteDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
         <button className="dialog-close" type="button" aria-label="Close" onClick={() => siteDialogRef.current?.close()}>×</button>
-        {selectedSite && <><div className={`dialog-visual${selectedSite.coverImage ? ' has-cover' : ''}`}>{selectedSite.coverImage ? <Image src={selectedSite.coverImage} alt={`${selectedSite.name} website cover`} fill sizes="(max-width: 760px) 100vw, 55vw" unoptimized /> : selectedSite.name}</div><div className="dialog-copy"><p className="eyebrow">{selectedSite.industry} / {selectedSite.style}</p><h2>{selectedSite.name}</h2>{selectedSite.note && <p>{selectedSite.note}</p>}<a className="line-button line-button--dark" href={selectedSite.url} target="_blank" rel="noreferrer"><span>Visit storefront</span><span className="line-button__icon">↗</span></a></div></>}
+        {selectedSite && <><div className={`dialog-visual${selectedSite.coverImage ? ' has-cover' : ''}`}>{selectedSite.coverImage ? <Image src={selectedSite.coverImage} alt={`${selectedSite.name} website cover`} fill sizes="(max-width: 760px) 100vw, 620px" quality={80} /> : selectedSite.name}</div><div className="dialog-copy"><p className="eyebrow">{selectedSite.industry} / {selectedSite.style}</p><h2>{selectedSite.name}</h2>{selectedSite.note && <p>{selectedSite.note}</p>}<a className="line-button line-button--dark" href={selectedSite.url} target="_blank" rel="noreferrer"><span>Visit storefront</span><span className="line-button__icon">↗</span></a></div></>}
       </dialog>
 
       <dialog className="auth-dialog" ref={authDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>

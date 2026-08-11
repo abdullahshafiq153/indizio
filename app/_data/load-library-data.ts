@@ -15,6 +15,22 @@ export type LibraryData = {
   bookmarks: SavedBookmarkSummary[]
 }
 
+type RelationshipValue = string | number | { id: string | number }
+type WebsiteSelection = {
+  id: string | number
+  slug?: string | null
+  name: string
+  cover?: unknown
+  coverImage?: string | null
+  industry?: RelationshipValue | { name?: string | null } | null
+  styles?: Array<RelationshipValue | { name?: string | null }> | null
+  note?: string | null
+  url: string
+  featuredRank?: number | null
+}
+type FolderSelection = { id: string | number; name: string }
+type BookmarkSelection = { id: string | number; website: RelationshipValue; folder: RelationshipValue }
+
 function relationshipID(value: string | number | { id: string | number }): string {
   return String(typeof value === 'object' ? value.id : value)
 }
@@ -45,17 +61,29 @@ export async function loadLibraryData(): Promise<LibraryData> {
         depth: 1,
         limit: 500,
         overrideAccess: false,
+        select: {
+          slug: true,
+          name: true,
+          cover: true,
+          coverImage: true,
+          industry: true,
+          styles: true,
+          note: true,
+          url: true,
+          featuredRank: true,
+        },
         sort: '-featuredRank',
       }),
     ])
 
-    const sites: Site[] = websiteResult.docs.map((website) => ({
+    const websites = websiteResult.docs as unknown as WebsiteSelection[]
+    const sites: Site[] = websites.map((website) => ({
       id: String(website.id),
-      slug: website.slug,
+      slug: website.slug || undefined,
       name: website.name,
       coverImage: coverURL(website.cover, website.coverImage),
-      industry: typeof website.industry === 'object' && website.industry ? website.industry.name : 'Ecommerce',
-      style: website.styles?.map((style: { name: string } | string | number) => typeof style === 'object' ? style.name : '').filter(Boolean).join(' / ') || 'Unclassified',
+      industry: typeof website.industry === 'object' && website.industry && 'name' in website.industry ? website.industry.name || 'Ecommerce' : 'Ecommerce',
+      style: website.styles?.map((style) => typeof style === 'object' && 'name' in style ? style.name || '' : '').filter(Boolean).join(' / ') || 'Unclassified',
       note: website.note || '',
       url: website.url,
       featured: website.featuredRank || 0,
@@ -71,6 +99,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
         depth: 0,
         limit: 100,
         overrideAccess: false,
+        select: { name: true },
         user: auth.user,
         sort: '-createdAt',
       }),
@@ -79,11 +108,14 @@ export async function loadLibraryData(): Promise<LibraryData> {
         depth: 0,
         limit: 500,
         overrideAccess: false,
+        select: { website: true, folder: true },
         user: auth.user,
       }),
     ])
 
-    const bookmarks = bookmarkResult.docs.map((bookmark) => ({
+    const bookmarkDocs = bookmarkResult.docs as unknown as BookmarkSelection[]
+    const folderDocs = folderResult.docs as unknown as FolderSelection[]
+    const bookmarks = bookmarkDocs.map((bookmark) => ({
       id: String(bookmark.id),
       websiteID: relationshipID(bookmark.website),
       collectionID: relationshipID(bookmark.folder),
@@ -96,7 +128,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
         email: auth.user.email || '',
         name: auth.user.name || auth.user.email?.split('@')[0] || 'Member',
       },
-      collections: folderResult.docs.map((folder) => ({
+      collections: folderDocs.map((folder) => ({
         id: String(folder.id),
         name: folder.name,
         count: bookmarks.filter((bookmark) => bookmark.collectionID === String(folder.id)).length,

@@ -127,8 +127,7 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .results-meta label { display: flex; gap: 9px; align-items: center; }
 .results-meta select { border: 0; background: transparent; text-transform: uppercase; outline: none; }
 .card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px 18px; }
-.site-card { min-width: 0; }
-.library--page .site-card { content-visibility: auto; contain-intrinsic-size: auto 420px; }
+.site-card { min-width: 0; content-visibility: auto; contain-intrinsic-size: auto 420px; }
 .card-visual { --card-bg: var(--white); --card-ink: var(--ink); position: relative; width: 100%; aspect-ratio: 1.24 / 1; overflow: hidden; border: 1px solid var(--rule); background: var(--card-bg); color: var(--card-ink); transition: transform .28s ease; }
 .site-card:nth-child(4n+2) .card-visual { --card-bg: var(--ink); --card-ink: var(--white); }
 .site-card:nth-child(4n+3) .card-visual { --card-bg: var(--paper); --card-ink: var(--ink); background-image: linear-gradient(rgba(0,0,0,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.07) 1px, transparent 1px); background-size: 28px 28px; }

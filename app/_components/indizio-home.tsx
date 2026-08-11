@@ -46,6 +46,9 @@ const INDUSTRIES = [
   'Swimsuit',
 ] as const
 
+const HOME_SKELETON_CARDS = Array.from({ length: 9 }, (_, index) => index)
+const LIBRARY_SKELETON_CARDS = Array.from({ length: 12 }, (_, index) => index)
+
 function ExternalIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -68,11 +71,13 @@ type Props = {
   initialCollections: BookmarkCollectionSummary[]
   initialBookmarks: SavedBookmarkSummary[]
   mode?: 'home' | 'library'
+  loading?: boolean
 }
 
-export function IndizioHome({ initialSites, initialMember, initialCollections, initialBookmarks, mode = 'home' }: Props) {
+export function IndizioHome({ initialSites, initialMember, initialCollections, initialBookmarks, mode = 'home', loading = false }: Props) {
   const isLibraryPage = mode === 'library'
   const initialVisible = isLibraryPage ? 12 : 9
+  const skeletonCards = isLibraryPage ? LIBRARY_SKELETON_CARDS : HOME_SKELETON_CARDS
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup')
@@ -314,7 +319,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
         </section>}
 
-        <section className={`library ruled-section ${isLibraryPage ? 'library--page' : 'library--home'}`} id="library">
+        <section className={`library ruled-section ${isLibraryPage ? 'library--page' : 'library--home'}`} id="library" aria-busy={loading}>
           {isLibraryPage && <div className="section-heading">
             <div><p className="eyebrow">The complete index / 001</p><h2>Websites worth studying.</h2></div>
             <p>Browse the complete, continuously growing index of storefronts selected for the decisions behind their design.</p>
@@ -323,7 +328,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <div className="library-tools">
             <label className="search-field">
               <span className="visually-hidden">Search websites</span><span aria-hidden="true">⌕</span>
-              <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(initialVisible) }} placeholder="Search by brand, industry, or observation" autoComplete="off" />
+              <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(initialVisible) }} placeholder="Search by brand, industry, or observation" autoComplete="off" disabled={loading} />
             </label>
             {isLibraryPage && authenticated && collections.length > 0 && <button className="filter-trigger" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
               Saved <span>{savedOnly ? 1 : 0}</span><span aria-hidden="true">＋</span>
@@ -342,21 +347,27 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
           <div className="library-body library-body--with-filters">
           <div className="library-results"><div className="results-meta">
-            <p>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</p>
+            <p>{loading ? <span className="skeleton-block skeleton-results-count" aria-label="Loading website count" /> : <>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</>}</p>
             <div className="results-controls">
               <label className="view-select">View
-                <select value={gridColumns} onChange={(event) => setGridColumns(Number(event.target.value) as GridColumns)} aria-label="Cards per row">
+                <select value={gridColumns} onChange={(event) => setGridColumns(Number(event.target.value) as GridColumns)} aria-label="Cards per row" disabled={loading}>
                   <option value={2}>2 columns</option>
                   <option value={3}>3 columns</option>
                   <option value={4}>4 columns</option>
                 </select>
               </label>
-              <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
+              <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} disabled={loading}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
             </div>
           </div>
 
           <div className="card-grid" data-columns={gridColumns} aria-live="polite">
-            {filteredSites.slice(0, visible).map((site) => {
+            {loading ? skeletonCards.map((item) => (
+              <article className="skeleton-card" key={item} aria-hidden="true">
+                <span className="skeleton-block skeleton-card__visual" />
+                <span className="skeleton-block skeleton-card__title" />
+                <span className="skeleton-block skeleton-card__detail" />
+              </article>
+            )) : filteredSites.slice(0, visible).map((site) => {
               const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
               return (
                 <article className="site-card" key={site.name}>
@@ -378,9 +389,9 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             })}
           </div>
 
-          {filteredSites.length === 0 && <div className="empty-state"><p>No signals found.</p><button className="text-button" type="button" onClick={resetFilters}>Reset the library</button></div>}
-          {!isLibraryPage && visible < filteredSites.length && <div className="load-more-wrap"><button className="line-button" type="button" onClick={() => setVisible((count) => count + 6)}><span>Load more websites</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
-          {isLibraryPage && visible < filteredSites.length && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status">
+          {!loading && filteredSites.length === 0 && <div className="empty-state"><p>No signals found.</p><button className="text-button" type="button" onClick={resetFilters}>Reset the library</button></div>}
+          {!loading && !isLibraryPage && visible < filteredSites.length && <div className="load-more-wrap"><button className="line-button" type="button" onClick={() => setVisible((count) => count + 6)}><span>Load more websites</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
+          {!loading && isLibraryPage && visible < filteredSites.length && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status">
             <span className="visually-hidden">Loading more websites</span>
             <div className="card-grid skeleton-grid skeleton-grid--more" aria-hidden="true">
               {[0, 1, 2].map((item) => (
@@ -392,13 +403,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               ))}
             </div>
           </div>}
-          {isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
+          {!loading && isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
           </div>
           <aside className="filter-sidebar" aria-label="Filter websites by industry">
             <div className="filter-sidebar__head"><p className="filter-label">Industries</p>{industries.size > 0 && <button className="text-button" type="button" onClick={resetFilters}>Clear</button>}</div>
             <div className="filter-sidebar__options">
               {industryOptions.map((industry) => <label className="sidebar-filter" key={industry}>
-                <input type="checkbox" checked={industries.has(industry)} onChange={() => toggleIndustry(industry)} />
+                <input type="checkbox" checked={industries.has(industry)} onChange={() => toggleIndustry(industry)} disabled={loading} />
                 <span>{industry}</span>
               </label>)}
             </div>
@@ -420,7 +431,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
         </section>
 
         <section className="stat-strip" aria-label="Library statistics">
-          <div><strong>001</strong><span>Edition</span></div><div><strong>{String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
+          <div><strong>001</strong><span>Edition</span></div><div><strong>{loading ? <span className="skeleton-block skeleton-stat-value" aria-label="Loading website total" /> : String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
         </section>
 
         <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>What 100 storefronts tell us about ecommerce now.</h2><p>The first Indizio Index maps the design decisions, trust signals, and merchandising patterns appearing across twelve industries.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>

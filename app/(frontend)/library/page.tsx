@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 
-import { IndizioHome } from '../../_components/indizio-home'
-import { loadLibraryData } from '../../_data/load-library-data'
+import { IndizioData, IndizioDataSkeleton } from '../../_components/indizio-data'
 
 export const revalidate = 300
 
@@ -16,15 +16,10 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function LibraryPage() {
-  const data = await loadLibraryData()
+export default function LibraryPage() {
   return (
-    <IndizioHome
-      initialSites={data.sites}
-      initialMember={data.member}
-      initialCollections={data.collections}
-      initialBookmarks={data.bookmarks}
-      mode="library"
-    />
+    <Suspense fallback={<IndizioDataSkeleton mode="library" />}>
+      <IndizioData mode="library" />
+    </Suspense>
   )
 }

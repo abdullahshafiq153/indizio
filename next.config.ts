@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.sanity.io' },
       { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
+      { protocol: 'https', hostname: 'indizio.space', pathname: '/api/media/file/**' },
+      { protocol: 'https', hostname: 'www.indizio.space', pathname: '/api/media/file/**' },
     ],
   },
   poweredByHeader: false,

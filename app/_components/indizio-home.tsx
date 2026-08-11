@@ -21,6 +21,7 @@ import type {
 import type { Site } from '../_data/sites'
 
 type SortMode = 'featured' | 'newest' | 'az'
+type HomeGridColumns = 2 | 3 | 4
 
 const INDUSTRIES = [
   'Apparel',
@@ -88,6 +89,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
   const [sort, setSort] = useState<SortMode>('featured')
+  const [homeGridColumns, setHomeGridColumns] = useState<HomeGridColumns>(3)
   const [visible, setVisible] = useState(initialVisible)
   const authDialogRef = useRef<HTMLDialogElement>(null)
   const bookmarkDialogRef = useRef<HTMLDialogElement>(null)
@@ -306,7 +308,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             <div className="hero__aside-copy">
               <p className="hero__intro">A living index of remarkable ecommerce websites, emerging patterns, and the details worth studying.</p>
               <Link className="line-button line-button--dark hero__cta" href="/library">
-                <span>Explore the library</span><span className="line-button__icon" aria-hidden="true">↗</span>
+                <span>View complete library</span><span className="line-button__icon" aria-hidden="true">↗</span>
               </Link>
             </div>
           </div>
@@ -346,10 +348,26 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <div className={`library-body${isLibraryPage ? '' : ' library-body--with-filters'}`}>
           <div className="library-results"><div className="results-meta">
             <p>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</p>
-            <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
+            <div className="results-controls">
+              {!isLibraryPage && <fieldset className="grid-view-toggle">
+                <legend className="visually-hidden">Cards per row</legend>
+                <span aria-hidden="true">View</span>
+                {([2, 3, 4] as const).map((columns) => (
+                  <button
+                    className={homeGridColumns === columns ? 'active' : ''}
+                    type="button"
+                    key={columns}
+                    aria-label={`Show ${columns} columns`}
+                    aria-pressed={homeGridColumns === columns}
+                    onClick={() => setHomeGridColumns(columns)}
+                  >{columns}</button>
+                ))}
+              </fieldset>}
+              <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
+            </div>
           </div>
 
-          <div className="card-grid" aria-live="polite">
+          <div className="card-grid" data-columns={isLibraryPage ? undefined : homeGridColumns} aria-live="polite">
             {filteredSites.slice(0, visible).map((site) => {
               const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
               return (
@@ -400,15 +418,21 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
         </section>
 
-        {!isLibraryPage && <><section className="stat-strip" aria-label="Library statistics">
-          <div><strong>001</strong><span>Edition</span></div><div><strong>{String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
+        {!isLibraryPage && <><section className="explore-section ruled-section" id="industries" aria-labelledby="explore-heading">
+          <div className="explore-section__heading">
+            <div><p className="eyebrow">Explore INDIZIO / 04</p><h2 id="explore-heading">Four paths through modern commerce.</h2></div>
+            <p>Move from storefront inspiration to repeatable patterns, original research, and practical ideas worth testing.</p>
+          </div>
+          <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">
+            <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
+            <a className="hero-path" href="#industries"><span className="hero-path__meta">02 / Building next</span><span className="hero-path__copy"><strong>Commerce patterns</strong><span>Buy boxes, cart drawers, cancel flows, and repeatable conversion patterns.</span></span><span className="hero-path__cta">Preview patterns <i aria-hidden="true">↗</i></span></a>
+            <a className="hero-path" href="#index-report"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></a>
+            <a className="hero-path" href="#newsletter"><span className="hero-path__meta">04 / Coming soon</span><span className="hero-path__copy"><strong>Ecommerce ideas</strong><span>Practical concepts, experiments, and details worth testing on your own store.</span></span><span className="hero-path__cta">Get early access <i aria-hidden="true">↗</i></span></a>
+          </div>
         </section>
 
-        <section className="hero-paths hero-paths--explore ruled-section" id="industries" aria-label="Explore INDIZIO">
-          <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
-          <a className="hero-path" href="#industries"><span className="hero-path__meta">02 / Building next</span><span className="hero-path__copy"><strong>Commerce patterns</strong><span>Buy boxes, cart drawers, cancel flows, and repeatable conversion patterns.</span></span><span className="hero-path__cta">Preview patterns <i aria-hidden="true">↗</i></span></a>
-          <a className="hero-path" href="#index-report"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></a>
-          <a className="hero-path" href="#newsletter"><span className="hero-path__meta">04 / Coming soon</span><span className="hero-path__copy"><strong>Ecommerce ideas</strong><span>Practical concepts, experiments, and details worth testing on your own store.</span></span><span className="hero-path__cta">Get early access <i aria-hidden="true">↗</i></span></a>
+        <section className="stat-strip" aria-label="Library statistics">
+          <div><strong>001</strong><span>Edition</span></div><div><strong>{String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
         </section>
 
         <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>What 100 storefronts tell us about ecommerce now.</h2><p>The first Indizio Index maps the design decisions, trust signals, and merchandising patterns appearing across twelve industries.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>

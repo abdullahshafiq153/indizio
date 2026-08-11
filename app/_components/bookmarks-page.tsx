@@ -210,10 +210,10 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
       <header className="site-header">
         <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
         <nav className="primary-nav" aria-label="Primary navigation">
-          <Link href="/library">Websites</Link>
-          <Link href="/#industries">Industries</Link>
-          <Link href="/#index-report">Research</Link>
-          <Link href="/#about">About</Link>
+          <Link href="/library">Website library</Link>
+          <Link href="/#industries">Commerce patterns</Link>
+          <Link href="/fieldnotes">CRO fieldnotes</Link>
+          <Link href="/#industries">Ecommerce ideas</Link>
         </nav>
         <div className="header-actions">
           {initialMember && <Link className="bookmark-collection" href="/bookmarks" aria-current="page" aria-label={`View ${bookmarks.length} saved websites`}><BookmarkIcon /><span>{bookmarks.length}</span></Link>}
@@ -225,7 +225,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
-        <Link href="/library">Websites</Link><Link href="/bookmarks">Bookmarks ({bookmarks.length})</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link>
+        <Link href="/library">Website library</Link><Link href="/#industries">Commerce patterns</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/#industries">Ecommerce ideas</Link><Link href="/bookmarks">Bookmarks ({bookmarks.length})</Link>
         <button className="mobile-account-button" type="button" onClick={initialMember ? handleSignOut : () => router.push('/')}>{initialMember ? 'Log out' : 'Log in'}</button>
       </nav>
 

@@ -439,10 +439,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       <header className="site-header">
         <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
         <nav className="primary-nav" aria-label="Primary navigation">
-          <Link href="/library" aria-current={isLibraryPage ? 'page' : undefined}>Websites</Link>
-          <Link href="/#industries">Industries</Link>
-          <Link href="/#index-report">Research</Link>
-          <Link href="/#about">About</Link>
+          <Link href="/library" aria-current={isLibraryPage ? 'page' : undefined}>Website library</Link>
+          <Link href="/#industries">Commerce patterns</Link>
+          <Link href="/fieldnotes">CRO fieldnotes</Link>
+          <Link href="/#industries">Ecommerce ideas</Link>
         </nav>
         <div className="header-actions">
           {authenticated && (
@@ -460,7 +460,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
-        <Link href="/library">Websites</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link><Link href="/#about">About</Link>
+        <Link href="/library">Website library</Link><Link href="/#industries">Commerce patterns</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/#industries">Ecommerce ideas</Link>
         {authenticated && <Link href="/bookmarks">Bookmarks ({savedWebsiteIDs.size})</Link>}
         <button className="mobile-account-button" type="button" onClick={handleAccount}>{authenticated ? 'Log out' : 'Log in'}</button>
       </nav>
@@ -585,7 +585,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">
             <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
             <a className="hero-path" href="#industries"><span className="hero-path__meta">02 / Building next</span><span className="hero-path__copy"><strong>Commerce patterns</strong><span>Buy boxes, cart drawers, cancel flows, and repeatable conversion patterns.</span></span><span className="hero-path__cta">Preview patterns <i aria-hidden="true">↗</i></span></a>
-            <a className="hero-path" href="#index-report"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></a>
+            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
             <a className="hero-path" href="#newsletter"><span className="hero-path__meta">04 / Coming soon</span><span className="hero-path__copy"><strong>Ecommerce ideas</strong><span>Practical concepts, experiments, and details worth testing on your own store.</span></span><span className="hero-path__cta">Get early access <i aria-hidden="true">↗</i></span></a>
           </div>
         </section>

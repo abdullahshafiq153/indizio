@@ -74,10 +74,8 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .hero-path__cta { padding-top: 14px; border-top: 1px solid currentColor; display: flex; align-items: center; justify-content: space-between; font: 500 9px/1 var(--font-dm-mono), monospace; text-transform: uppercase; }
 .hero-path__cta i { font-size: 16px; font-style: normal; transition: transform .2s ease; }
 .hero-path:hover .hero-path__cta i { transform: translate(3px, -3px); }
-.hero-paths.hero-paths--explore { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none; }
-.hero-paths--explore .hero-path { min-height: 250px; padding: 28px; }
-.hero-paths--explore .hero-path:nth-child(even) { border-right: 0; }
-.hero-paths--explore .hero-path:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
+.hero-paths.hero-paths--explore { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 0 44px 44px; overflow: visible; scroll-snap-type: none; }
+.hero-paths--explore .hero-path { min-height: 250px; padding: 28px; border: 1px solid var(--rule); }
 .explore-section { padding-top: clamp(74px, 8vw, 118px); }
 .explore-section__heading { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, .75fr); align-items: end; gap: 64px; padding: 0 44px clamp(60px, 7vw, 96px); }
 .explore-section__heading h2 { max-width: 820px; }
@@ -128,11 +126,6 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .results-controls { display: flex; align-items: center; gap: 24px; }
 .results-meta label { display: flex; gap: 9px; align-items: center; }
 .results-meta select { border: 0; background: transparent; text-transform: uppercase; outline: none; }
-.grid-view-toggle { min-width: 0; margin: 0; padding: 0; border: 0; display: flex; align-items: center; gap: 5px; }
-.grid-view-toggle > span { margin-right: 4px; }
-.grid-view-toggle button { width: 28px; height: 28px; border: 1px solid var(--soft-rule); background: transparent; font: 500 9px var(--font-dm-mono), monospace; }
-.grid-view-toggle button:hover, .grid-view-toggle button:focus-visible { border-color: var(--ink); }
-.grid-view-toggle button.active { border-color: var(--ink); background: var(--ink); color: var(--white); }
 .card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px 18px; }
 .site-card { min-width: 0; }
 .library--page .site-card { content-visibility: auto; contain-intrinsic-size: auto 420px; }
@@ -281,10 +274,10 @@ button:disabled { cursor: wait; opacity: .58; }
   .hero__aside-copy { grid-column: 1; grid-row: 3; margin-top: 28px; padding-bottom: 0; }
   .hero-paths { min-height: 225px; grid-template-columns: repeat(4, minmax(260px, 1fr)); overflow-x: auto; scroll-snap-type: x proximity; }
   .hero-path { min-height: 225px; scroll-snap-align: start; }
-  .hero-paths.hero-paths--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  .hero-paths.hero-paths--explore { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 24px 28px; overflow: visible; }
   .explore-section__heading { grid-template-columns: 1fr; gap: 28px; padding: 0 24px 58px; }
   .explore-section__heading > p { margin: 0; }
-  .grid-view-toggle { display: none; }
+  .view-select { display: none !important; }
   .stat-strip { grid-template-columns: 1fr 1fr; }.stat-strip > div:nth-child(2) { border-right: 0; }.stat-strip > div:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
   .library, .industry-section { padding: 70px 20px; }
   .section-heading { grid-template-columns: 1fr; margin-bottom: 45px; }.section-heading > p { margin: 0; }
@@ -306,8 +299,7 @@ button:disabled { cursor: wait; opacity: .58; }
   .hero-path { min-height: 215px; border-right: 1px solid var(--rule); border-bottom: 0; }
   .hero-path:last-child { border-right: 0; }
   .hero-paths.hero-paths--explore { grid-template-columns: 1fr; }
-  .hero-paths--explore .hero-path { min-height: 215px; border-right: 0; border-bottom: 1px solid var(--rule); }
-  .hero-paths--explore .hero-path:last-child { border-bottom: 0; }
+  .hero-paths--explore .hero-path { min-height: 215px; }
   .stat-strip > div { padding: 18px; min-height: 88px; }
   .library-tools { grid-template-columns: 1fr; }.filter-trigger { min-height: 56px; border-left: 0; border-top: 1px solid var(--rule); }
   .filter-panel { align-items: flex-start; gap: 24px; flex-direction: column; }

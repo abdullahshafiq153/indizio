@@ -349,20 +349,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <div className="library-results"><div className="results-meta">
             <p>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</p>
             <div className="results-controls">
-              {!isLibraryPage && <fieldset className="grid-view-toggle">
-                <legend className="visually-hidden">Cards per row</legend>
-                <span aria-hidden="true">View</span>
-                {([2, 3, 4] as const).map((columns) => (
-                  <button
-                    className={homeGridColumns === columns ? 'active' : ''}
-                    type="button"
-                    key={columns}
-                    aria-label={`Show ${columns} columns`}
-                    aria-pressed={homeGridColumns === columns}
-                    onClick={() => setHomeGridColumns(columns)}
-                  >{columns}</button>
-                ))}
-              </fieldset>}
+              {!isLibraryPage && <label className="view-select">View
+                <select value={homeGridColumns} onChange={(event) => setHomeGridColumns(Number(event.target.value) as HomeGridColumns)} aria-label="Cards per row">
+                  <option value={2}>2 columns</option>
+                  <option value={3}>3 columns</option>
+                  <option value={4}>4 columns</option>
+                </select>
+              </label>}
               <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
             </div>
           </div>

@@ -54,7 +54,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
   try {
     const payload = await getPayload({ config })
     const requestHeaders = await headers()
-    const [auth, websiteResult] = await Promise.all([
+    const [auth, websiteResult, publicSaveResult] = await Promise.all([
       payload.auth({ headers: requestHeaders }),
       payload.find({
         collection: 'websites',
@@ -74,9 +74,21 @@ export async function loadLibraryData(): Promise<LibraryData> {
         },
         sort: '-featuredRank',
       }),
+      payload.find({
+        collection: 'bookmarks',
+        depth: 0,
+        limit: 5000,
+        overrideAccess: true,
+        select: { website: true },
+      }),
     ])
 
     const websites = websiteResult.docs as unknown as WebsiteSelection[]
+    const publicSaveCounts = new Map<string, number>()
+    for (const save of publicSaveResult.docs as unknown as Array<{ website: RelationshipValue }>) {
+      const websiteID = relationshipID(save.website)
+      publicSaveCounts.set(websiteID, (publicSaveCounts.get(websiteID) || 0) + 1)
+    }
     const sites: Site[] = websites.map((website) => ({
       id: String(website.id),
       slug: website.slug || undefined,
@@ -87,6 +99,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
       note: website.note || '',
       url: website.url,
       featured: website.featuredRank || 0,
+      saveCount: publicSaveCounts.get(String(website.id)) || 0,
     }))
 
     if (auth.user?.collection !== 'members') {

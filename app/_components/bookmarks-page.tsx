@@ -176,20 +176,21 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
   }
 
   const handleRemoveBookmark = (bookmark: SavedBookmarkSummary) => {
+    const removed = bookmarks.filter((item) => item.websiteID === bookmark.websiteID)
     const originalIndex = bookmarks.findIndex((item) => item.id === bookmark.id)
-    setBookmarks((current) => current.filter((item) => item.id !== bookmark.id))
-    setMessage('Bookmark removed.')
+    setBookmarks((current) => current.filter((item) => item.websiteID !== bookmark.websiteID))
+    setMessage('Save removed.')
 
     const data = new FormData()
-    data.set('bookmark', bookmark.id)
+    data.set('website', bookmark.websiteID)
     startTransition(async () => {
       const result = await removeBookmark(data)
       setMessage(result.message)
       if (!result.ok) {
         setBookmarks((current) => {
-          if (current.some((item) => item.id === bookmark.id)) return current
+          if (current.some((item) => item.websiteID === bookmark.websiteID)) return current
           const insertAt = Math.max(0, Math.min(originalIndex, current.length))
-          return [...current.slice(0, insertAt), bookmark, ...current.slice(insertAt)]
+          return [...current.slice(0, insertAt), ...removed, ...current.slice(insertAt)]
         })
       }
     })
@@ -232,13 +233,13 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
       <main className="bookmarks-page ruled-section">
         <div className="section-heading bookmarks-heading">
           <div><p className="eyebrow">Your research library</p><h1>Saved websites.</h1></div>
-          <p>Everything you bookmark lives here. Collections are optional layers for organizing the ideas you want to revisit.</p>
+          <p>Everything you save lives here. Collections are private layers for organizing the ideas you want to revisit.</p>
         </div>
 
         {!initialMember ? (
           <div className="bookmarks-empty bookmarks-empty--signed-out">
             <BookmarkIcon />
-            <h2>Sign in to see your bookmarks.</h2>
+            <h2>Sign in to see your saves.</h2>
             <p>Your saved websites and private collections will appear here on every device.</p>
             <Link className="line-button line-button--dark" href="/"><span>Return home to sign in</span><span className="line-button__icon">→</span></Link>
           </div>
@@ -247,7 +248,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
             <aside className="bookmarks-sidebar" aria-label="Bookmark collections">
               <p className="filter-label">Collections</p>
               <button className={selectedCollection === null ? 'active' : ''} type="button" onClick={() => setSelectedCollection(null)}>
-                <span>All Bookmarks</span><strong>{bookmarks.length}</strong>
+                <span>All saves</span><strong>{bookmarks.length}</strong>
               </button>
               {collections.map((collection) => {
                 const count = collectionCounts.get(collection.id) || 0
@@ -278,7 +279,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
 
             <section className="bookmarks-results" aria-live="polite">
               <div className="results-meta">
-                <p>{visibleBookmarks.length} {visibleBookmarks.length === 1 ? 'website' : 'websites'} in {selectedCollection ? collectionName(selectedCollection) : 'All Bookmarks'}</p>
+                <p>{visibleBookmarks.length} {visibleBookmarks.length === 1 ? 'website' : 'websites'} in {selectedCollection ? collectionName(selectedCollection) : 'All saves'}</p>
                 <p className="bookmarks-status" role="status">{message}</p>
               </div>
               {visibleBookmarks.length ? (
@@ -297,7 +298,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
                         <div className="card-meta">
                           <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                             <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name}`}><ExternalIcon /></a>
-                            <button className="card-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${site.name} from bookmarks`} title="Remove bookmark"><BookmarkIcon /></button>
+                            <button className="card-action card-save-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${site.name} from your saves`} title="Remove save"><BookmarkIcon /><span>{site.saveCount || 0}</span></button>
                           </div></div>
                           <div className="bookmark-card-detail"><span>{collectionName(bookmark.collectionID)}</span><button type="button" onClick={() => openCollectionDialog(bookmark.id)}>Edit</button></div>
                         </div>
@@ -306,7 +307,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
                   })}
                 </div>
               ) : (
-                <div className="bookmarks-empty"><BookmarkIcon /><h2>No bookmarks here yet.</h2><p>Save websites from the library, then return here to organize them.</p><Link className="line-button" href="/library"><span>Browse the library</span><span className="line-button__icon">↗</span></Link></div>
+                <div className="bookmarks-empty"><BookmarkIcon /><h2>No saves here yet.</h2><p>Save websites from the library, then return here to organize them.</p><Link className="line-button" href="/library"><span>Browse the library</span><span className="line-button__icon">↗</span></Link></div>
               )}
             </section>
           </div>

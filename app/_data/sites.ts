@@ -8,6 +8,7 @@ export type Site = {
   note: string
   url: string
   featured: number
+  saveCount?: number
 }
 
 export const sites: Site[] = [

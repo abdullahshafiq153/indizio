@@ -17,6 +17,7 @@ export type BookmarkActionResult = ActionResult & {
   bookmarkID?: string
   collectionID?: string | null
   collectionName?: string
+  saveCount?: number
 }
 
 const unavailable = (): ActionResult => ({
@@ -159,7 +160,7 @@ export async function saveBookmark(formData: FormData): Promise<BookmarkActionRe
     const existing = await session.payload.find({
       collection: 'bookmarks',
       depth: 0,
-      limit: 1,
+      limit: 100,
       overrideAccess: false,
       user: session.user,
       where: {
@@ -170,9 +171,13 @@ export async function saveBookmark(formData: FormData): Promise<BookmarkActionRe
       },
     })
 
-    if (existing.docs[0]) {
-      const bookmark = existing.docs[0]
-      const folderID = typeof bookmark.folder === 'object' ? bookmark.folder?.id : bookmark.folder
+    const existingBookmark = existing.docs.find((item) => {
+      const folderID = typeof item.folder === 'object' ? item.folder?.id : item.folder
+      return String(folderID || '') === collection
+    })
+
+    if (existingBookmark) {
+      const folderID = typeof existingBookmark.folder === 'object' ? existingBookmark.folder?.id : existingBookmark.folder
       let collectionName = 'All Bookmarks'
       if (folderID) {
         const folder = await session.payload.findByID({
@@ -186,9 +191,10 @@ export async function saveBookmark(formData: FormData): Promise<BookmarkActionRe
       return {
         ok: true,
         message: `Already saved to ${collectionName}.`,
-        bookmarkID: String(bookmark.id),
+        bookmarkID: String(existingBookmark.id),
         collectionID: folderID ? String(folderID) : null,
         collectionName,
+        saveCount: existing.totalDocs,
       }
     }
 
@@ -204,12 +210,18 @@ export async function saveBookmark(formData: FormData): Promise<BookmarkActionRe
       user: session.user,
     })
     revalidateBookmarkPages()
+    const totalSaves = await session.payload.count({
+      collection: 'bookmarks',
+      overrideAccess: true,
+      where: { website: { equals: website } },
+    })
     return {
       ok: true,
       message: collection ? 'Saved to your collection.' : 'Saved to All Bookmarks.',
       bookmarkID: String(bookmark.id),
       collectionID: collection || null,
       collectionName: collection ? 'Collection' : 'All Bookmarks',
+      saveCount: totalSaves.totalDocs,
     }
   } catch (error) {
     const text = error instanceof Error ? error.message : ''
@@ -226,32 +238,19 @@ export async function moveBookmark(formData: FormData): Promise<BookmarkActionRe
   if (!bookmark) return { ok: false, message: 'Choose a bookmark to organize.' }
 
   try {
-    let collectionName = 'All Bookmarks'
-    if (collection) {
-      const folder = await session.payload.findByID({
-        collection: 'bookmark-collections',
-        id: collection,
-        overrideAccess: false,
-        user: session.user,
-      })
-      collectionName = folder.name
-    }
+    const source = await session.payload.findByID({ collection: 'bookmarks', id: bookmark, depth: 0, overrideAccess: false, user: session.user })
+    if (!collection) return { ok: true, message: 'Already saved to All saves.', bookmarkID: String(source.id), collectionID: null, collectionName: 'All saves' }
 
-    await session.payload.update({
-      collection: 'bookmarks',
-      id: bookmark,
-      data: { folder: collection || null },
-      overrideAccess: false,
-      user: session.user,
+    const folder = await session.payload.findByID({ collection: 'bookmark-collections', id: collection, overrideAccess: false, user: session.user })
+    const websiteID = typeof source.website === 'object' ? source.website.id : source.website
+    const existing = await session.payload.find({
+      collection: 'bookmarks', depth: 0, limit: 1, overrideAccess: false, user: session.user,
+      where: { and: [{ owner: { equals: session.user.id } }, { website: { equals: websiteID } }, { folder: { equals: collection } }] },
     })
+    const saved = existing.docs[0] || await session.payload.create({ collection: 'bookmarks', data: { owner: session.user.id, website: websiteID, folder: collection }, overrideAccess: false, user: session.user })
+    const totalSaves = await session.payload.count({ collection: 'bookmarks', overrideAccess: true, where: { website: { equals: websiteID } } })
     revalidateBookmarkPages()
-    return {
-      ok: true,
-      message: `Saved to ${collectionName}.`,
-      bookmarkID: bookmark,
-      collectionID: collection || null,
-      collectionName,
-    }
+    return { ok: true, message: existing.docs[0] ? `Already saved to ${folder.name}.` : `Added to ${folder.name}.`, bookmarkID: String(saved.id), collectionID: collection, collectionName: folder.name, saveCount: totalSaves.totalDocs }
   } catch {
     return { ok: false, message: 'We could not change that collection.' }
   }
@@ -318,14 +317,18 @@ export async function removeBookmark(formData: FormData): Promise<ActionResult> 
   const session = await currentMember()
   if (!session) return { ok: false, message: 'Sign in to manage saved websites.' }
   const bookmark = value(formData, 'bookmark')
+  const website = value(formData, 'website')
 
   try {
-    await session.payload.delete({
-      collection: 'bookmarks',
-      id: bookmark,
-      overrideAccess: false,
-      user: session.user,
-    })
+    if (website) {
+      const saved = await session.payload.find({
+        collection: 'bookmarks', depth: 0, limit: 500, overrideAccess: false, user: session.user,
+        where: { and: [{ owner: { equals: session.user.id } }, { website: { equals: website } }] },
+      })
+      await Promise.all(saved.docs.map((item) => session.payload.delete({ collection: 'bookmarks', id: item.id, overrideAccess: false, user: session.user })))
+    } else if (bookmark) {
+      await session.payload.delete({ collection: 'bookmarks', id: bookmark, overrideAccess: false, user: session.user })
+    }
     revalidateBookmarkPages()
     return { ok: true, message: 'Bookmark removed.' }
   } catch {

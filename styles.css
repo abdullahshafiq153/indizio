@@ -145,6 +145,7 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .card-actions { display: flex; align-items: center; gap: 9px; }
 .card-action { width: 24px; height: 24px; border: 0; padding: 0; background: transparent; color: var(--muted); display: grid; place-items: center; transition: color .18s ease, transform .18s ease; }
 .card-action svg { width: 14px; height: 14px; }
+.card-save-action { width: auto; grid-template-columns: 14px auto; gap: 4px; font: 500 9px/1 var(--font-dm-mono), monospace; }
 .card-action:hover, .card-action:focus-visible, .card-action[aria-pressed="true"] { color: var(--ink); transform: translateY(-1px); }
 .card-meta { padding: 14px 2px 0; }
 .card-title-row, .card-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

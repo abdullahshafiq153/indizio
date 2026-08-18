@@ -95,6 +95,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToast>(null)
   const [bookmarkToastExiting, setBookmarkToastExiting] = useState(false)
   const [bookmarks, setBookmarks] = useState(initialBookmarks)
+  const [saveCounts, setSaveCounts] = useState(() => new Map(initialSites.filter((site) => site.id).map((site) => [site.id!, site.saveCount || 0])))
   const [collections, setCollections] = useState(initialCollections)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [industries, setIndustries] = useState<Set<string>>(new Set())
@@ -238,26 +239,26 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       return
     }
 
-    const existing = bookmarks.find((bookmark) => bookmark.websiteID === site.id)
-    if (existing) {
-      setBookmarks((current) => current.filter((bookmark) => bookmark.id !== existing.id))
+    const existing = bookmarks.filter((bookmark) => bookmark.websiteID === site.id)
+    if (existing.length) {
+      setBookmarks((current) => current.filter((bookmark) => bookmark.websiteID !== site.id))
+      setSaveCounts((current) => new Map(current).set(site.id!, Math.max(0, (current.get(site.id!) || 0) - existing.length)))
       showBookmarkToast({
-        message: 'Removed from bookmarks.',
+        message: 'Removed from your saves.',
         saved: false,
         websiteID: site.id,
       })
 
       const data = new FormData()
-      data.set('bookmark', existing.id)
+      data.set('website', site.id)
       startTransition(async () => {
         const result = await removeBookmark(data)
         if (!result.ok) {
-          setBookmarks((current) => current.some((bookmark) => bookmark.id === existing.id)
-            ? current
-            : [existing, ...current])
+          setBookmarks((current) => [...existing, ...current])
+          setSaveCounts((current) => new Map(current).set(site.id!, (current.get(site.id!) || 0) + existing.length))
           showBookmarkToast({
-            bookmarkID: existing.id,
-            collectionID: existing.collectionID,
+            bookmarkID: existing[0].id,
+            collectionID: existing[0].collectionID,
             message: result.message,
             saved: true,
             websiteID: site.id,
@@ -273,6 +274,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       websiteID: site.id!,
       collectionID: null,
     }, ...current])
+    setSaveCounts((current) => new Map(current).set(site.id!, (current.get(site.id!) || 0) + 1))
     showBookmarkToast({
       collectionID: null,
       message: 'Saved to All Bookmarks.',
@@ -290,8 +292,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           websiteID: site.id!,
           collectionID: result.collectionID || null,
         } : bookmark))
+        if (typeof result.saveCount === 'number') setSaveCounts((current) => new Map(current).set(site.id!, result.saveCount!))
       } else {
         setBookmarks((current) => current.filter((bookmark) => bookmark.id !== optimisticID))
+        setSaveCounts((current) => new Map(current).set(site.id!, Math.max(0, (current.get(site.id!) || 0) - 1)))
       }
       showBookmarkToast({
         bookmarkID: result.bookmarkID,
@@ -336,6 +340,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               websiteID: pendingBookmark.id!,
               collectionID: bookmarkResult.collectionID || null,
             }, ...current])
+            if (typeof bookmarkResult.saveCount === 'number') setSaveCounts((current) => new Map(current).set(pendingBookmark.id!, bookmarkResult.saveCount!))
           }
           showBookmarkToast({
             bookmarkID: bookmarkResult.bookmarkID,
@@ -384,14 +389,11 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     const websiteID = pendingBookmark?.id
     const nextCollectionName = collections.find((collection) => collection.id === nextCollectionID)?.name || 'All Bookmarks'
 
-    setBookmarks((current) => current.map((bookmark) => bookmark.id === bookmarkID
-      ? { ...bookmark, collectionID: nextCollectionID }
-      : bookmark))
     bookmarkDialogRef.current?.close()
     showBookmarkToast({
       bookmarkID,
       collectionID: nextCollectionID,
-      message: `Saved to ${nextCollectionName}.`,
+      message: `Adding to ${nextCollectionName}…`,
       saved: true,
       websiteID,
     })
@@ -402,9 +404,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       const result = await moveBookmark(data)
       setBookmarkMessage(result.message)
       if (result.ok && result.bookmarkID) {
-        setBookmarks((current) => current.map((bookmark) => bookmark.id === result.bookmarkID
-          ? { ...bookmark, collectionID: result.collectionID || null }
-          : bookmark))
+        setBookmarks((current) => current.some((bookmark) => bookmark.id === result.bookmarkID)
+          ? current
+          : [{ id: result.bookmarkID!, websiteID: websiteID || '', collectionID: result.collectionID || null }, ...current])
+        if (websiteID && typeof result.saveCount === 'number') setSaveCounts((current) => new Map(current).set(websiteID, result.saveCount!))
         showBookmarkToast({
           bookmarkID: result.bookmarkID,
           collectionID: result.collectionID,
@@ -540,7 +543,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                   <div className="card-meta">
                     <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                       <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name} website`} title="Visit website"><ExternalIcon /></a>
-                      <button className="card-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove bookmark from' : authenticated ? 'Bookmark' : 'Sign up to bookmark'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove bookmark' : authenticated ? 'Save website' : 'Sign up to bookmark'}><BookmarkIcon filled={bookmarked} /></button>
+                      <button className="card-action card-save-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove saved research for' : authenticated ? 'Save' : 'Sign up to save'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove save' : authenticated ? 'Save website' : 'Sign up to save'}><BookmarkIcon filled={bookmarked} /><span>{saveCounts.get(site.id || '') || 0}</span></button>
                     </div></div>
                     <div className="card-detail-row"><p>{site.industry} · {site.style}</p></div>
                   </div>
@@ -660,18 +663,18 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       <dialog className="auth-dialog collection-dialog" ref={bookmarkDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
         <button className="dialog-close auth-dialog__close" type="button" aria-label="Close" onClick={() => bookmarkDialogRef.current?.close()}>×</button>
         <div className="auth-dialog__content">
-          <p className="eyebrow">Organize bookmark</p>
-          <h2>Choose where to keep {pendingBookmark?.name || 'this website'}.</h2>
-          <p>It will always remain in All Bookmarks. A custom collection is optional.</p>
+          <p className="eyebrow">Organize save</p>
+          <h2>Add {pendingBookmark?.name || 'this website'} to a collection.</h2>
+          <p>Every collection placement counts as a save signal and remains private to you.</p>
           {activeBookmarkID && (
             <form className="auth-form collection-save-form" onSubmit={handleChangeCollection}>
               <input type="hidden" name="bookmark" value={activeBookmarkID} />
               <label htmlFor="bookmark-folder">Collection</label>
-              <select id="bookmark-folder" name="collection" defaultValue={bookmarks.find((bookmark) => bookmark.id === activeBookmarkID)?.collectionID || ''}>
-                <option value="">All Bookmarks</option>
+              <select id="bookmark-folder" name="collection" defaultValue="">
+                <option value="" disabled>Select a collection</option>
                 {collections.map((collection) => <option key={collection.id} value={collection.id}>{collection.name} ({collection.count})</option>)}
               </select>
-              <button className="line-button line-button--dark" type="submit" disabled={isPending}><span>{isPending ? 'Moving…' : 'Update collection'}</span><span className="line-button__icon" aria-hidden="true">→</span></button>
+              <button className="line-button line-button--dark" type="submit" disabled={isPending || collections.length === 0}><span>{isPending ? 'Saving…' : 'Add to collection'}</span><span className="line-button__icon" aria-hidden="true">→</span></button>
             </form>
           )}
           <div className="collection-divider"><span>New collection</span></div>

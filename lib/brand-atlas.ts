@@ -143,7 +143,7 @@ export function classifyPage(urlValue: string): AtlasPageType {
   const url = new URL(urlValue)
   const path = url.pathname.toLowerCase()
   if (path === '/' || path === '') return 'homepage'
-  if (//(gift[-_]?cards?)(/|$)/.test(path) || //products?/[^/]*gift[-_]?cards?(/|$)/.test(path)) return 'gift-card'
+  if (path.includes('/gift-card') || path.includes('/gift_card')) return 'gift-card'
   if (/\/(products?|p)\//.test(path)) return 'product'
   if (/\/(collections?|categories?|catalog)\//.test(path)) return 'collection'
   if (/\/(blogs?|journal|stories)(\/|$)/.test(path)) return 'blog'

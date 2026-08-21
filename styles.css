@@ -266,8 +266,10 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .featured-fieldnote:last-child { border-right: 0; }
 .featured-fieldnote__meta { display: flex; justify-content: space-between; gap: 18px; font: 500 9px var(--font-dm-mono), monospace; text-transform: uppercase; }
 .featured-fieldnote__copy { margin-top: auto; padding-top: 90px; }
-.featured-fieldnote__copy h3 { max-width: 850px; font-size: clamp(38px, 4.5vw, 66px); line-height: .98; }
+.featured-fieldnote__copy h3 { max-width: 850px; margin: 0; font-family: var(--font-manrope), Arial, sans-serif; font-size: clamp(38px, 4.5vw, 66px); font-weight: 500; letter-spacing: -.065em; line-height: 1.02; }
 .featured-fieldnote:nth-child(2) .featured-fieldnote__copy h3 { font-size: clamp(34px, 3.5vw, 50px); }
+.featured-fieldnote__copy h3 a { background-image: linear-gradient(currentColor, currentColor); background-position: 0 100%; background-repeat: no-repeat; background-size: 0 1px; transition: background-size .3s ease; }
+.featured-fieldnote:hover .featured-fieldnote__copy h3 a { background-size: 100% 1px; }
 .featured-fieldnote__copy > p { max-width: 680px; margin: 24px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
 .featured-fieldnote__cta { margin-top: 32px; padding-top: 15px; border-top: 1px solid var(--ink); display: flex; align-items: center; justify-content: space-between; font: 500 9px var(--font-dm-mono), monospace; text-transform: uppercase; }
 .featured-fieldnote__cta i { font-size: 17px; font-style: normal; transition: transform .2s ease; }

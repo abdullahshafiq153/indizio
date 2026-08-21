@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { MemberSummary } from '../_data/load-library-data'
 
@@ -41,6 +41,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   const [query, setQuery] = useState('')
   const [type, setType] = useState('all')
   const [resultQuery, setResultQuery] = useState('')
+  const autoRunRef = useRef(false)
 
   const loadHistory = useCallback(async () => {
     if (!member) return
@@ -88,7 +89,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
     return () => window.clearInterval(timer)
   }, [loadHistory, selectedRun?.id, selectedRun?.status])
 
-  const startCrawl = async (event?: FormEvent<HTMLFormElement>, force = false, inputOverride?: string) => {
+  const startCrawl = useCallback(async (event?: FormEvent<HTMLFormElement>, force = false, inputOverride?: string) => {
     event?.preventDefault()
     const input = inputOverride || query
     if (!member || !input.trim()) return
@@ -112,7 +113,19 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [loadHistory, member, query])
+
+  useEffect(() => {
+    if (autoRunRef.current) return
+    const input = new URLSearchParams(window.location.search).get('url')?.trim()
+    if (!input) return
+    autoRunRef.current = true
+    const timer = window.setTimeout(() => {
+      setQuery(input)
+      if (member) void startCrawl(undefined, false, input)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [member, startCrawl])
 
   const filteredPages = useMemo(() => {
     const normalized = resultQuery.trim().toLowerCase()

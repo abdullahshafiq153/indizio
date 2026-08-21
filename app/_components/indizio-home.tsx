@@ -65,6 +65,15 @@ function ExternalIcon() {
   )
 }
 
+function AtlasIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M2.8 8h10.4M8 2.5c1.7 1.5 2.6 3.3 2.6 5.5S9.7 12 8 13.5C6.3 12 5.4 10.2 5.4 8S6.3 4 8 2.5Z" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  )
+}
+
 function BookmarkIcon({ filled = false }: { filled?: boolean }) {
   return (
     <svg viewBox="0 0 16 16" fill={filled ? 'currentColor' : 'none'} aria-hidden="true">
@@ -545,6 +554,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                   </div>
                   <div className="card-meta">
                     <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
+                      <Link className="card-action" href={`/atlas?url=${encodeURIComponent(site.url)}`} aria-label={`Map ${site.name} in Brand Atlas`} title="Map in Brand Atlas"><AtlasIcon /></Link>
                       <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name} website`} title="Visit website"><ExternalIcon /></a>
                       <button className="card-action card-save-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove saved research for' : authenticated ? 'Save' : 'Sign up to save'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove save' : authenticated ? 'Save website' : 'Sign up to save'}><BookmarkIcon filled={bookmarked} />{saveCount >= 5 && <span>{saveCount}</span>}</button>
                     </div></div>

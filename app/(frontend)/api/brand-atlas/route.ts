@@ -6,6 +6,7 @@ import { brandNameFromDomain, crawlDomain, domainKey, normalizeStartURL } from '
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
+const SHARED_CACHE_DAYS = 30
 
 type Relationship = string | number | { id: string | number }
 type AtlasPageRecord = {
@@ -83,17 +84,61 @@ async function resolveInput(payload: Awaited<ReturnType<typeof getPayload>>, inp
     select: { name: true, url: true },
     where: { name: { contains: input } },
   })
-  if (!result.docs.length) throw new Error('That brand is not in the Indizio library yet. Paste its website URL instead.')
-  const website = result.docs[0] as unknown as { name: string; url: string }
-  const url = normalizeStartURL(website.url)
-  return { brandName: website.name, domain: domainKey(url.hostname), startURL: new URL('/', url).toString() }
+  if (result.docs.length) {
+    const website = result.docs[0] as unknown as { name: string; url: string }
+    const url = normalizeStartURL(website.url)
+    return { brandName: website.name, domain: domainKey(url.hostname), startURL: new URL('/', url).toString() }
+  }
+
+  const mapped = await payload.find({
+    collection: 'crawl-runs',
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    sort: '-completedAt',
+    where: {
+      and: [
+        { status: { equals: 'completed' } },
+        { or: [{ brandName: { contains: input } }, { domain: { contains: input } }] },
+      ],
+    },
+  })
+  if (!mapped.docs.length) throw new Error('That brand has not been mapped yet. Paste its website URL to create the first map.')
+  const run = mapped.docs[0] as unknown as CrawlRunRecord
+  return { brandName: run.brandName, domain: run.domain, startURL: run.startURL }
 }
 
 export async function GET(request: Request) {
   const { payload, user } = await authenticatedContext(request)
+  const requestURL = new URL(request.url)
+  const suggestionQuery = requestURL.searchParams.get('suggest')?.trim().slice(0, 80) || ''
+  if (suggestionQuery.length >= 2) {
+    const result = await payload.find({
+      collection: 'crawl-runs',
+      depth: 0,
+      limit: 12,
+      overrideAccess: true,
+      pagination: false,
+      sort: '-completedAt',
+      select: { brandName: true, domain: true, startURL: true, urlCount: true, completedAt: true },
+      where: {
+        and: [
+          { status: { equals: 'completed' } },
+          { or: [{ brandName: { contains: suggestionQuery } }, { domain: { contains: suggestionQuery } }] },
+        ],
+      },
+    })
+    const seen = new Set<string>()
+    const suggestions = (result.docs as unknown as CrawlRunRecord[]).filter((run) => {
+      if (seen.has(run.domain)) return false
+      seen.add(run.domain)
+      return true
+    }).slice(0, 6).map((run) => ({ brandName: run.brandName, domain: run.domain, startURL: run.startURL, urlCount: run.urlCount || 0, completedAt: run.completedAt || null }))
+    return NextResponse.json({ suggestions })
+  }
   if (!user) return NextResponse.json({ message: 'Sign in to view Brand Atlas history.' }, { status: 401 })
 
-  const id = new URL(request.url).searchParams.get('id')
+  const id = requestURL.searchParams.get('id')
   if (id) {
     try {
       const run = await payload.findByID({
@@ -173,6 +218,7 @@ export async function POST(request: Request) {
     }
 
     if (!body.force) {
+      const freshAfter = new Date(Date.now() - SHARED_CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString()
       const existing = await payload.find({
         collection: 'crawl-runs',
         depth: 0,
@@ -185,11 +231,52 @@ export async function POST(request: Request) {
             { owner: { equals: user.id } },
             { domain: { equals: target.domain } },
             { status: { equals: 'completed' } },
+            { completedAt: { greater_than: freshAfter } },
           ],
         },
       })
       if (existing.docs[0]) {
         return NextResponse.json({ cached: true, run: serializeRun(existing.docs[0] as unknown as CrawlRunRecord) })
+      }
+
+      const shared = await payload.find({
+        collection: 'crawl-runs',
+        depth: 0,
+        limit: 1,
+        overrideAccess: true,
+        sort: '-completedAt',
+        where: {
+          and: [
+            { domain: { equals: target.domain } },
+            { status: { equals: 'completed' } },
+            { completedAt: { greater_than: freshAfter } },
+          ],
+        },
+      })
+      if (shared.docs[0]) {
+        const source = shared.docs[0] as unknown as CrawlRunRecord
+        const cachedRun = await payload.create({
+          collection: 'crawl-runs',
+          depth: 0,
+          overrideAccess: false,
+          user,
+          data: {
+            owner: user.id,
+            input,
+            brandName: source.brandName,
+            domain: source.domain,
+            startURL: source.startURL,
+            status: 'completed',
+            source: 'history-cache',
+            urlCount: source.urlCount || 0,
+            sitemapCount: source.sitemapCount || 0,
+            truncated: Boolean(source.truncated),
+            completedAt: source.completedAt,
+            pages: (source.pages || []).map((page) => ({ url: page.url, path: page.path, type: page.type, source: page.source, title: page.title || undefined })),
+          },
+        }) as unknown as CrawlRunRecord
+        console.info('[brand-atlas] shared cache hit', { domain: target.domain, sourceRunId: String(source.id), runId: String(cachedRun.id) })
+        return NextResponse.json({ cached: true, shared: true, run: serializeRun(cachedRun) })
       }
     }
 

@@ -22,6 +22,7 @@ type AtlasRun = {
   error: string | null
   pages?: AtlasPage[]
 }
+type AtlasSuggestion = { brandName: string; domain: string; startURL: string; urlCount: number; completedAt: string | null }
 
 const PAGE_TYPES = ['all', 'homepage', 'product', 'collection', 'blog', 'article', 'page', 'about', 'help', 'policy', 'account', 'cart', 'checkout', 'search', 'gift-card', 'other']
 
@@ -41,6 +42,8 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   const [query, setQuery] = useState('')
   const [type, setType] = useState('all')
   const [resultQuery, setResultQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<AtlasSuggestion[]>([])
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false)
   const autoRunRef = useRef(false)
 
   const loadHistory = useCallback(async () => {
@@ -62,6 +65,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
       const data = await response.json()
       if (!response.ok) throw new Error(data.message || 'Unable to open this crawl.')
       setSelectedRun(data.run)
+      setSuggestionsOpen(false)
       setType('all')
       setResultQuery('')
     } catch (error) {
@@ -106,7 +110,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
       setSelectedRun(data.run)
       setType('all')
       setResultQuery('')
-      setMessage(data.cached ? 'Opened your saved result—no new crawl was needed.' : 'Discovery started. You can leave this page and return from history.')
+      setMessage(data.shared ? 'Opened a fresh community map—no duplicate crawl was needed.' : data.cached ? 'Opened your saved result—no new crawl was needed.' : 'Discovery started. You can leave this page and return from history.')
       void loadHistory()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to start Brand Atlas.')
@@ -126,6 +130,24 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
     }, 0)
     return () => window.clearTimeout(timer)
   }, [member, startCrawl])
+
+  useEffect(() => {
+    const value = query.trim()
+    if (value.length < 2 || loading) return
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/brand-atlas?suggest=${encodeURIComponent(value)}`, { cache: 'no-store', signal: controller.signal })
+        const data = await response.json()
+        if (!response.ok) return
+        setSuggestions(data.suggestions || [])
+        setSuggestionsOpen(Boolean(data.suggestions?.length))
+      } catch {
+        // Autocomplete is optional and should never interrupt the main search flow.
+      }
+    }, 220)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [loading, query])
 
   const filteredPages = useMemo(() => {
     const normalized = resultQuery.trim().toLowerCase()
@@ -163,7 +185,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
         {member ? (
           <form onSubmit={startCrawl} className="atlas-search__form">
             <label htmlFor="atlas-query">Brand name or website</label>
-            <div><input id="atlas-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. Allbirds or https://allbirds.com" autoComplete="off" required /><button type="submit" disabled={loading || query.trim().length < 2}><span>{loading ? 'Opening…' : 'Map this brand'}</span><span aria-hidden="true">→</span></button></div>
+            <div className="atlas-search__input-wrap"><input id="atlas-query" role="combobox" value={query} onChange={(event) => { setQuery(event.target.value); setSuggestionsOpen(true) }} onFocus={() => setSuggestionsOpen(Boolean(suggestions.length))} onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)} placeholder="e.g. Allbirds or https://allbirds.com" autoComplete="off" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded={suggestionsOpen} aria-controls="atlas-suggestions" required /><button type="submit" disabled={loading || query.trim().length < 2}><span>{loading ? 'Opening…' : 'Map this brand'}</span><span aria-hidden="true">→</span></button>{suggestionsOpen && <ul className="atlas-suggestions" id="atlas-suggestions" role="listbox" aria-label="Previously mapped brands">{suggestions.map((suggestion) => <li key={suggestion.domain} role="option" aria-selected="false"><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setQuery(suggestion.startURL); setSuggestionsOpen(false); void startCrawl(undefined, false, suggestion.startURL) }}><span><strong>{suggestion.brandName}</strong><small>{suggestion.domain}</small></span><span><small>{suggestion.urlCount} URLs</small><small>Use saved map →</small></span></button></li>)}</ul>}</div>
             <p aria-live="polite">{message || 'Brand names resolve from the Indizio library. Paste a URL for any other website.'}</p>
           </form>
         ) : (

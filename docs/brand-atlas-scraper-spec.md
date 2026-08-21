@@ -14,6 +14,8 @@ It is the scraper/crawler module discussed for Indizio. The first version now su
 - Users can enter a brand name already present in the Website Library.
 - Users can paste a public HTTP or HTTPS website URL for any other brand.
 - Completed results are reused from the user's history unless they explicitly refresh the map.
+- Fresh completed maps are reused across users for 30 days, while each user's search history and ownership remain private.
+- Brand and domain autocomplete suggests previously mapped sites as the user types.
 - Runs continue after the initiating response and the interface polls their stored status.
 - Results can be searched, filtered by page type, copied, and exported as CSV.
 - Results are tagged with color-coded Shopify-aware page types including homepage, product, collection, blog, article, page, policy, cart, checkout, and gift card.

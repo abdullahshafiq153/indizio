@@ -17,6 +17,7 @@ type AtlasRun = {
   urlCount: number
   sitemapCount: number
   truncated: boolean
+  refreshing: boolean
   completedAt: string | null
   createdAt: string
   error: string | null
@@ -44,6 +45,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   const [resultQuery, setResultQuery] = useState('')
   const [suggestions, setSuggestions] = useState<AtlasSuggestion[]>([])
   const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const [view, setView] = useState<'list' | 'map'>('list')
   const autoRunRef = useRef(false)
 
   const loadHistory = useCallback(async () => {
@@ -78,20 +80,20 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   useEffect(() => { void loadHistory() }, [loadHistory])
 
   useEffect(() => {
-    if (selectedRun?.status !== 'running') return
+    if (selectedRun?.status !== 'running' && !selectedRun?.refreshing) return
     const timer = window.setInterval(async () => {
       try {
         const response = await fetch(`/api/brand-atlas?id=${encodeURIComponent(selectedRun.id)}`, { cache: 'no-store' })
         const data = await response.json()
         if (!response.ok) return
         setSelectedRun(data.run)
-        if (data.run.status !== 'running') void loadHistory()
+        if (data.run.status !== 'running' && !data.run.refreshing) void loadHistory()
       } catch {
         // A temporary polling failure should not discard a running crawl.
       }
     }, 2500)
     return () => window.clearInterval(timer)
-  }, [loadHistory, selectedRun?.id, selectedRun?.status])
+  }, [loadHistory, selectedRun?.id, selectedRun?.refreshing, selectedRun?.status])
 
   const startCrawl = useCallback(async (event?: FormEvent<HTMLFormElement>, force = false, inputOverride?: string) => {
     event?.preventDefault()
@@ -110,7 +112,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
       setSelectedRun(data.run)
       setType('all')
       setResultQuery('')
-      setMessage(data.shared ? 'Opened a fresh community map—no duplicate crawl was needed.' : data.cached ? 'Opened your saved result—no new crawl was needed.' : 'Discovery started. You can leave this page and return from history.')
+      setMessage(data.revalidating ? 'Opened the community map instantly. New pages are being merged in the background.' : data.shared ? 'Opened a fresh community map—no duplicate crawl was needed.' : data.cached ? 'Opened your saved result—no new crawl was needed.' : 'Discovery started. You can leave this page and return from history.')
       void loadHistory()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to start Brand Atlas.')
@@ -157,6 +159,8 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
       return matchesType && matchesQuery
     })
   }, [resultQuery, selectedRun?.pages, type])
+
+  const mapGroups = useMemo(() => PAGE_TYPES.slice(1).map((pageType) => ({ type: pageType, pages: filteredPages.filter((page) => page.type === pageType) })).filter((group) => group.pages.length), [filteredPages])
 
   const copyURLs = async () => {
     await navigator.clipboard.writeText(filteredPages.map((page) => page.url).join('\n'))
@@ -218,17 +222,26 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
                 <div className="atlas-results__stats"><span><strong>{selectedRun.urlCount}</strong><small>URLs found</small></span><span><strong>{selectedRun.sitemapCount}</strong><small>Sitemaps checked</small></span></div>
               </header>
               {selectedRun.truncated && <p className="atlas-truncated">This website exceeded the safe result limit. The first 5,000 discoverable URLs are shown.</p>}
+              {selectedRun.refreshing && <p className="atlas-refreshing"><span className="atlas-spinner" />Showing the saved map now. New URLs are being merged in the background.</p>}
               <div className="atlas-results__tools">
                 <label><span className="visually-hidden">Search result URLs</span><input type="search" value={resultQuery} onChange={(event) => setResultQuery(event.target.value)} placeholder="Filter URLs" /></label>
                 <label>Type <select value={type} onChange={(event) => setType(event.target.value)}>{PAGE_TYPES.map((option) => <option key={option} value={option}>{option === 'all' ? 'All pages' : option}</option>)}</select></label>
                 <button type="button" onClick={() => void copyURLs()}>Copy URLs</button>
                 <button type="button" onClick={exportCSV}>Export CSV</button>
+                <div className="atlas-view-toggle" role="group" aria-label="Result view"><button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button><button type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}>Map</button></div>
                 <button type="button" onClick={() => { setQuery(selectedRun.startURL); void startCrawl(undefined, true, selectedRun.startURL) }}>Refresh map</button>
               </div>
               <div className="atlas-results__meta"><span>{filteredPages.length} shown</span><span>Saved {formatDate(selectedRun.completedAt || selectedRun.createdAt)}</span></div>
-              <ol className="atlas-url-list">
+              {view === 'list' ? <ol className="atlas-url-list">
                 {filteredPages.map((page, index) => <li key={page.url}><span>{String(index + 1).padStart(3, '0')}</span><div><strong>{page.title || page.path || '/'}</strong><a href={page.url} target="_blank" rel="noreferrer">{page.url}</a></div><span className={`atlas-url-tag atlas-url-tag--${page.type}`}>{page.type}</span><a href={page.url} target="_blank" rel="noreferrer" aria-label={`Open ${page.url}`}>↗</a></li>)}
-              </ol>
+              </ol> : <div className="atlas-map" role="region" aria-label={`Visual URL map for ${selectedRun.brandName}`}>
+                <div className="atlas-map__root"><span>Brand root</span><strong>{selectedRun.domain}</strong><a href={selectedRun.startURL} target="_blank" rel="noreferrer">Open homepage ↗</a></div>
+                <div className="atlas-map__groups">{mapGroups.map((group) => <section className="atlas-map__group" key={group.type}>
+                  <header><span className={`atlas-url-tag atlas-url-tag--${group.type}`}>{group.type}</span><strong>{group.pages.length}</strong></header>
+                  <div>{group.pages.slice(0, 6).map((page) => <a key={page.url} href={page.url} target="_blank" rel="noreferrer"><span>{page.title || page.path || '/'}</span><small>{page.path || '/'}</small></a>)}</div>
+                  {group.pages.length > 6 && <p>+ {group.pages.length - 6} more URLs in this branch</p>}
+                </section>)}</div>
+              </div>}
             </>
           )}
         </section>

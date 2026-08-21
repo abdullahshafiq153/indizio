@@ -49,6 +49,7 @@ export const CrawlRuns: CollectionConfig = {
     { name: 'urlCount', type: 'number', defaultValue: 0 },
     { name: 'sitemapCount', type: 'number', defaultValue: 0 },
     { name: 'truncated', type: 'checkbox', defaultValue: false },
+    { name: 'refreshing', type: 'checkbox', defaultValue: false, index: true },
     { name: 'completedAt', type: 'date' },
     { name: 'error', type: 'textarea' },
     {

@@ -15,9 +15,12 @@ It is the scraper/crawler module discussed for Indizio. The first version now su
 - Users can paste a public HTTP or HTTPS website URL for any other brand.
 - Completed results are reused from the user's history unless they explicitly refresh the map.
 - Fresh completed maps are reused across users for 30 days, while each user's search history and ownership remain private.
+- Shared maps older than 24 hours are returned immediately and refreshed in the background, with only one refresh running per domain.
+- Newly discovered URLs are merged into the saved map after a background refresh.
 - Brand and domain autocomplete suggests previously mapped sites as the user types.
 - Runs continue after the initiating response and the interface polls their stored status.
 - Results can be searched, filtered by page type, copied, and exported as CSV.
+- Users can switch between the detailed list and a visual map organized as domain → page-type branches → representative URLs.
 - Results are tagged with color-coded Shopify-aware page types including homepage, product, collection, blog, article, page, policy, cart, checkout, and gift card.
 - Discovery checks declared sitemaps first and uses public same-domain links as a fallback and enrichment source.
 - Each result is private to its owner and manageable in Payload by administrators.

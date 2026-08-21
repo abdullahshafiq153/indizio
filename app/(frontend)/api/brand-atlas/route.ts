@@ -7,6 +7,7 @@ import { brandNameFromDomain, crawlDomain, domainKey, normalizeStartURL } from '
 export const runtime = 'nodejs'
 export const maxDuration = 300
 const SHARED_CACHE_DAYS = 30
+const BACKGROUND_REFRESH_HOURS = 24
 
 type Relationship = string | number | { id: string | number }
 type AtlasPageRecord = {
@@ -29,6 +30,7 @@ type CrawlRunRecord = {
   urlCount?: number | null
   sitemapCount?: number | null
   truncated?: boolean | null
+  refreshing?: boolean | null
   completedAt?: string | null
   error?: string | null
   createdAt: string
@@ -48,6 +50,7 @@ function serializeRun(run: CrawlRunRecord, includePages = true) {
     urlCount: run.urlCount || 0,
     sitemapCount: run.sitemapCount || 0,
     truncated: Boolean(run.truncated),
+    refreshing: Boolean(run.refreshing),
     completedAt: run.completedAt || null,
     createdAt: run.createdAt,
     error: stale ? 'This crawl did not complete within the processing window. Refresh the map to try again.' : run.error || null,
@@ -255,6 +258,16 @@ export async function POST(request: Request) {
       })
       if (shared.docs[0]) {
         const source = shared.docs[0] as unknown as CrawlRunRecord
+        const refreshAfter = Date.now() - BACKGROUND_REFRESH_HOURS * 60 * 60 * 1000
+        const shouldRefresh = !source.completedAt || new Date(source.completedAt).getTime() < refreshAfter
+        const activeRefresh = shouldRefresh ? await payload.find({
+          collection: 'crawl-runs', depth: 0, limit: 1, overrideAccess: true,
+          where: { and: [
+            { domain: { equals: target.domain } }, { refreshing: { equals: true } },
+            { updatedAt: { greater_than: new Date(Date.now() - 10 * 60 * 1000).toISOString() } },
+          ] },
+        }) : null
+        const revalidating = shouldRefresh && !activeRefresh?.docs.length
         const cachedRun = await payload.create({
           collection: 'crawl-runs',
           depth: 0,
@@ -271,12 +284,30 @@ export async function POST(request: Request) {
             urlCount: source.urlCount || 0,
             sitemapCount: source.sitemapCount || 0,
             truncated: Boolean(source.truncated),
+            refreshing: revalidating,
             completedAt: source.completedAt,
             pages: (source.pages || []).map((page) => ({ url: page.url, path: page.path, type: page.type, source: page.source, title: page.title || undefined })),
           },
         }) as unknown as CrawlRunRecord
         console.info('[brand-atlas] shared cache hit', { domain: target.domain, sourceRunId: String(source.id), runId: String(cachedRun.id) })
-        return NextResponse.json({ cached: true, shared: true, run: serializeRun(cachedRun) })
+        if (revalidating) after(async () => {
+          console.info('[brand-atlas] background refresh started', { runId: String(cachedRun.id), domain: target.domain })
+          try {
+            const result = await crawlDomain(target.startURL)
+            const merged = new Map((source.pages || []).map((page) => [page.url, page]))
+            for (const page of result.pages) merged.set(page.url, page)
+            const pages = Array.from(merged.values()).slice(0, 5000)
+            await payload.update({ collection: 'crawl-runs', id: cachedRun.id, overrideAccess: true, data: {
+              refreshing: false, completedAt: new Date().toISOString(), urlCount: pages.length,
+              sitemapCount: result.sitemapCount, truncated: result.truncated || merged.size > 5000, pages, error: null,
+            } })
+            console.info('[brand-atlas] background refresh completed', { runId: String(cachedRun.id), domain: target.domain, urlCount: pages.length })
+          } catch (error) {
+            await payload.update({ collection: 'crawl-runs', id: cachedRun.id, overrideAccess: true, data: { refreshing: false } })
+            console.error('[brand-atlas] background refresh failed', { runId: String(cachedRun.id), domain: target.domain, error: error instanceof Error ? error.message : String(error) })
+          }
+        })
+        return NextResponse.json({ cached: true, shared: true, revalidating, run: serializeRun(cachedRun) })
       }
     }
 
@@ -296,6 +327,7 @@ export async function POST(request: Request) {
         urlCount: 0,
         sitemapCount: 0,
         truncated: false,
+        refreshing: false,
         pages: [],
       },
     }) as unknown as CrawlRunRecord

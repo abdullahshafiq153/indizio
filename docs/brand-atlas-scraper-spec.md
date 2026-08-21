@@ -16,9 +16,11 @@ It is the scraper/crawler module discussed for Indizio. The first version now su
 - Completed results are reused from the user's history unless they explicitly refresh the map.
 - Runs continue after the initiating response and the interface polls their stored status.
 - Results can be searched, filtered by page type, copied, and exported as CSV.
+- Results are tagged with color-coded Shopify-aware page types including homepage, product, collection, blog, article, page, policy, cart, checkout, and gift card.
 - Discovery checks declared sitemaps first and uses public same-domain links as a fallback and enrichment source.
 - Each result is private to its owner and manageable in Payload by administrators.
 - A run stores up to 5,000 URLs and clearly reports when that safety limit was reached.
+- Crawl start, completion, failure, and failure-persistence events are written to structured runtime logs.
 
 ## 2. Core use case
 

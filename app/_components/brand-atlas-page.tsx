@@ -23,7 +23,7 @@ type AtlasRun = {
   pages?: AtlasPage[]
 }
 
-const PAGE_TYPES = ['all', 'homepage', 'product', 'collection', 'blog', 'article', 'about', 'help', 'policy', 'account', 'cart', 'search', 'other']
+const PAGE_TYPES = ['all', 'homepage', 'product', 'collection', 'blog', 'article', 'page', 'about', 'help', 'policy', 'account', 'cart', 'checkout', 'search', 'gift-card', 'other']
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
@@ -189,7 +189,7 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
               </div>
               <div className="atlas-results__meta"><span>{filteredPages.length} shown</span><span>Saved {formatDate(selectedRun.completedAt || selectedRun.createdAt)}</span></div>
               <ol className="atlas-url-list">
-                {filteredPages.map((page, index) => <li key={page.url}><span>{String(index + 1).padStart(3, '0')}</span><div><strong>{page.title || page.path || '/'}</strong><a href={page.url} target="_blank" rel="noreferrer">{page.url}</a></div><span>{page.type}</span><a href={page.url} target="_blank" rel="noreferrer" aria-label={`Open ${page.url}`}>↗</a></li>)}
+                {filteredPages.map((page, index) => <li key={page.url}><span>{String(index + 1).padStart(3, '0')}</span><div><strong>{page.title || page.path || '/'}</strong><a href={page.url} target="_blank" rel="noreferrer">{page.url}</a></div><span className={`atlas-url-tag atlas-url-tag--${page.type}`}>{page.type}</span><a href={page.url} target="_blank" rel="noreferrer" aria-label={`Open ${page.url}`}>↗</a></li>)}
               </ol>
             </>
           )}

@@ -507,10 +507,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             <button className="text-button" type="button" onClick={resetFilters}>Clear all</button>
           </div>}
 
-          <div className="library-body library-body--with-filters">
+          <div className={`library-body library-body--with-filters${isLibraryPage || filtersOpen ? ' library-body--filters-visible' : ''}`}>
           <div className="library-results"><div className="results-meta">
             <p>{loading ? <span className="skeleton-block skeleton-results-count" aria-label="Loading website count" /> : <>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</>}</p>
             <div className="results-controls">
+              {!isLibraryPage && <button className="industries-toggle" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)} disabled={loading}>
+                <span>Industries</span><span>{industries.size || 'All'}</span><i aria-hidden="true">⌄</i>
+              </button>}
               <label className="view-select">View
                 <select value={gridColumns} onChange={(event) => setGridColumns(Number(event.target.value) as GridColumns)} aria-label="Cards per row" disabled={loading}>
                   <option value={2}>2 columns</option>
@@ -568,7 +571,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>}
           {!loading && isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
           </div>
-          <aside className="filter-sidebar" aria-label="Filter websites by industry">
+          {(isLibraryPage || filtersOpen) && <aside className="filter-sidebar" aria-label="Filter websites by industry">
             <div className="filter-sidebar__head"><p className="filter-label">Industries</p>{industries.size > 0 && <button className="text-button" type="button" onClick={resetFilters}>Clear</button>}</div>
             <div className="filter-sidebar__options">
               {industryOptions.map((industry) => <label className="sidebar-filter" key={industry}>
@@ -576,7 +579,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                 <span>{industry}</span>
               </label>)}
             </div>
-          </aside>
+          </aside>}
           </div>
         </section>
 

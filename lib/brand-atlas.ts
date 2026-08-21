@@ -1,7 +1,7 @@
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
 
-export type AtlasPageType = 'homepage' | 'product' | 'collection' | 'blog' | 'article' | 'about' | 'help' | 'policy' | 'account' | 'cart' | 'search' | 'other'
+export type AtlasPageType = 'homepage' | 'product' | 'collection' | 'blog' | 'article' | 'page' | 'about' | 'help' | 'policy' | 'account' | 'cart' | 'checkout' | 'search' | 'gift-card' | 'other'
 export type AtlasPage = {
   url: string
   path: string
@@ -143,6 +143,7 @@ export function classifyPage(urlValue: string): AtlasPageType {
   const url = new URL(urlValue)
   const path = url.pathname.toLowerCase()
   if (path === '/' || path === '') return 'homepage'
+  if (//(gift[-_]?cards?)(/|$)/.test(path) || //products?/[^/]*gift[-_]?cards?(/|$)/.test(path)) return 'gift-card'
   if (/\/(products?|p)\//.test(path)) return 'product'
   if (/\/(collections?|categories?|catalog)\//.test(path)) return 'collection'
   if (/\/(blogs?|journal|stories)(\/|$)/.test(path)) return 'blog'
@@ -151,8 +152,10 @@ export function classifyPage(urlValue: string): AtlasPageType {
   if (/\/(help|support|contact|faq)(\/|$)/.test(path)) return 'help'
   if (/\/(policies|privacy|terms|refund|returns?|shipping)(\/|$|-)/.test(path)) return 'policy'
   if (/\/(account|login|register)(\/|$)/.test(path)) return 'account'
+  if (/\/(checkouts?|checkout)(\/|$)/.test(path)) return 'checkout'
   if (/\/(cart|basket)(\/|$)/.test(path)) return 'cart'
   if (/\/(search)(\/|$)/.test(path)) return 'search'
+  if (/\/(pages?)(\/|$)/.test(path)) return 'page'
   return 'other'
 }
 

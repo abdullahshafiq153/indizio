@@ -61,7 +61,7 @@ export const CrawlRuns: CollectionConfig = {
           name: 'type',
           type: 'select',
           required: true,
-          options: ['homepage', 'product', 'collection', 'blog', 'article', 'about', 'help', 'policy', 'account', 'cart', 'search', 'other'],
+          options: ['homepage', 'product', 'collection', 'blog', 'article', 'page', 'about', 'help', 'policy', 'account', 'cart', 'checkout', 'search', 'gift-card', 'other'],
         },
         { name: 'source', type: 'select', required: true, options: ['sitemap', 'link'] },
         { name: 'title', type: 'text' },

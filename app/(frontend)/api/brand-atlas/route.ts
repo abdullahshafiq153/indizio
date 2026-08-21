@@ -213,6 +213,7 @@ export async function POST(request: Request) {
     }) as unknown as CrawlRunRecord
 
     after(async () => {
+      console.info('[brand-atlas] crawl started', { runId: String(run.id), domain: target.domain })
       try {
         const result = await crawlDomain(target.startURL)
         await payload.update({
@@ -229,17 +230,23 @@ export async function POST(request: Request) {
             error: null,
           },
         })
+        console.info('[brand-atlas] crawl completed', { runId: String(run.id), domain: target.domain, urlCount: result.pages.length })
       } catch (error) {
-        await payload.update({
-          collection: 'crawl-runs',
-          id: run.id,
-          overrideAccess: true,
-          data: {
-            status: 'failed',
-            completedAt: new Date().toISOString(),
-            error: error instanceof Error ? error.message.slice(0, 1000) : 'The crawl failed unexpectedly.',
-          },
-        })
+        const message = error instanceof Error ? error.message.slice(0, 1000) : 'The crawl failed unexpectedly.'
+        console.error('[brand-atlas] crawl failed', { runId: String(run.id), domain: target.domain, error: message })
+        try {
+          await payload.update({
+            collection: 'crawl-runs',
+            id: run.id,
+            overrideAccess: true,
+            data: { status: 'failed', completedAt: new Date().toISOString(), error: message },
+          })
+        } catch (updateError) {
+          console.error('[brand-atlas] failed to persist crawl failure', {
+            runId: String(run.id),
+            error: updateError instanceof Error ? updateError.message : String(updateError),
+          })
+        }
       }
     })
 

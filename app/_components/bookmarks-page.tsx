@@ -297,7 +297,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
                         <div className="card-meta">
                           <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                             <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name}`}><ExternalIcon /></a>
-                            <button className="card-action card-save-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${site.name} from your saves`} title="Remove save"><BookmarkIcon /><span>{site.saveCount || 0}</span></button>
+                            <button className="card-action card-save-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${site.name} from your saves`} title="Remove save"><BookmarkIcon />{(site.saveCount || 0) >= 5 && <span>{site.saveCount}</span>}</button>
                           </div></div>
                           <div className="bookmark-card-detail"><span>{collectionName(bookmark.collectionID)}</span><button type="button" onClick={() => openCollectionDialog(bookmark.id)}>Edit</button></div>
                         </div>

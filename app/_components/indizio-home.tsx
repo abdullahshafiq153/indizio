@@ -531,6 +531,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               </article>
             )) : filteredSites.slice(0, visible).map((site) => {
               const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
+              const saveCount = saveCounts.get(site.id || '') || 0
               return (
                 <article className="site-card" key={site.name}>
                   <div className="card-visual">
@@ -542,7 +543,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                   <div className="card-meta">
                     <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
                       <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name} website`} title="Visit website"><ExternalIcon /></a>
-                      <button className="card-action card-save-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove saved research for' : authenticated ? 'Save' : 'Sign up to save'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove save' : authenticated ? 'Save website' : 'Sign up to save'}><BookmarkIcon filled={bookmarked} /><span>{saveCounts.get(site.id || '') || 0}</span></button>
+                      <button className="card-action card-save-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove saved research for' : authenticated ? 'Save' : 'Sign up to save'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove save' : authenticated ? 'Save website' : 'Sign up to save'}><BookmarkIcon filled={bookmarked} />{saveCount >= 5 && <span>{saveCount}</span>}</button>
                     </div></div>
                     <div className="card-detail-row"><p>{site.industry} · {site.style}</p></div>
                   </div>

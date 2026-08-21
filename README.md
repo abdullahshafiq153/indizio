@@ -22,6 +22,8 @@ pnpm dev
 
 Set `DATABASE_URL` to a MongoDB Atlas connection string and replace `PAYLOAD_SECRET` with a long random value. Add `BEEHIIV_API_KEY` and `BEEHIIV_PUBLICATION_ID` to enable newsletter subscriptions.
 
+For Google account access, create a Google OAuth web client and set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`. Production should use `https://www.indizio.space/api/auth/google/callback`; add that exact URI to the Google client’s authorized redirect URIs.
+
 Open `http://localhost:3000`. The Payload admin is at `http://localhost:3000/admin`; the first administrator can be created there. Load the starter website records after connecting MongoDB:
 
 ```bash

@@ -110,6 +110,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [industries, setIndustries] = useState<Set<string>>(new Set())
   const [menuOpen, setMenuOpen] = useState(false)
   const [newsletterMessage, setNewsletterMessage] = useState('No noise. Unsubscribe whenever you like.')
+  const [googleNewsletterConsent, setGoogleNewsletterConsent] = useState(true)
   const [pendingBookmark, setPendingBookmark] = useState<Site | null>(null)
   const [query, setQuery] = useState('')
   const [savedOnly, setSavedOnly] = useState(false)
@@ -683,11 +684,14 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             <button type="button" className={authMode === 'signup' ? 'active' : ''} onClick={() => { setAuthMode('signup'); setAuthMessage('') }}>Sign up</button>
             <button type="button" className={authMode === 'signin' ? 'active' : ''} onClick={() => { setAuthMode('signin'); setAuthMessage('') }}>Sign in</button>
           </div>
+          {authMode === 'signup' && <label className="consent-field auth-google-consent"><input type="checkbox" checked={googleNewsletterConsent} onChange={(event) => setGoogleNewsletterConsent(event.target.checked)} /><span>Also send me INDIZIO’s weekly fieldnotes. I can unsubscribe at any time.</span></label>}
+          <a className="google-auth-button" href={`/api/auth/google/start?newsletter=${authMode === 'signup' && googleNewsletterConsent ? '1' : '0'}&returnTo=${isLibraryPage ? '/library' : '/'}`}><span className="google-auth-button__mark" aria-hidden="true">G</span><span>Continue with Google</span><i aria-hidden="true">→</i></a>
+          <div className="auth-divider"><span>or use email</span></div>
           <form className="auth-form" onSubmit={handleAuth}>
             {authMode === 'signup' && <><label htmlFor="account-name">Name</label><input id="account-name" name="name" type="text" placeholder="Your name" autoComplete="name" required /></>}
             <label htmlFor="account-email">Email address</label><input id="account-email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
             <label htmlFor="account-password">Password</label><input id="account-password" name="password" type="password" placeholder="At least 8 characters" minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} required />
-            {authMode === 'signup' && <label className="consent-field"><input name="newsletterConsent" type="checkbox" defaultChecked /><span>Also send me INDIZIO’s weekly fieldnotes. I can unsubscribe at any time.</span></label>}
+            {authMode === 'signup' && googleNewsletterConsent && <input name="newsletterConsent" type="hidden" value="on" />}
             <button className="line-button line-button--dark" type="submit" disabled={isPending}><span>{isPending ? 'Please wait…' : authMode === 'signup' ? 'Create account' : 'Sign in'}</span><span className="line-button__icon" aria-hidden="true">→</span></button>
           </form>
           <p className="auth-note" aria-live="polite">{authMessage || 'Your newsletter choice is optional and stored with your account.'}</p>

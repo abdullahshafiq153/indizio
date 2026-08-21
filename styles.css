@@ -359,6 +359,13 @@ h2 { font-size: clamp(48px, 6vw, 88px); }
 .auth-tabs button { min-height: 42px; border: 0; background: transparent; font: 500 10px var(--font-dm-mono), monospace; text-transform: uppercase; }
 .auth-tabs button + button { border-left: 1px solid var(--ink); }
 .auth-tabs button.active { background: var(--ink); color: var(--white); }
+.google-auth-button { min-height: 54px; padding: 0 14px; border: 1px solid var(--ink); background: var(--white); display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; font: 500 10px var(--font-dm-mono), monospace; text-transform: uppercase; transition: background .2s ease, color .2s ease; }
+.google-auth-button:hover { background: var(--ink); color: var(--white); }
+.google-auth-button__mark { width: 24px; height: 24px; border: 1px solid currentColor; display: grid; place-items: center; border-radius: 50%; font: 600 12px var(--font-manrope), sans-serif; }
+.google-auth-button i { font-size: 16px; font-style: normal; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font: 500 8px var(--font-dm-mono), monospace; text-transform: uppercase; }
+.auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: var(--soft-rule); }
+.auth-google-consent { margin: -5px 0 16px; }
 .consent-field { width: 100%; display: grid; grid-template-columns: 18px 1fr; align-items: start; gap: 10px; margin: 5px 0; font-size: 12px; line-height: 1.45; }
 .consent-field input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--ink); }
 .auth-note { color: var(--muted); font: 400 9px/1.5 var(--font-dm-mono), monospace !important; text-transform: uppercase; }

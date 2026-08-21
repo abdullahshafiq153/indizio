@@ -3,10 +3,11 @@
 import config from '@payload-config'
 import { login, logout } from '@payloadcms/next/auth'
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { getPayload } from 'payload'
 
 import { subscribeToBeehiiv } from '@/lib/beehiiv'
+import { GOOGLE_SESSION_COOKIE } from '@/lib/google-session'
 
 export type ActionResult = {
   ok: boolean
@@ -98,7 +99,11 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
 }
 
 export async function signOut(): Promise<void> {
-  if (process.env.DATABASE_URL) await logout({ config })
+  try {
+    if (process.env.DATABASE_URL) await logout({ config })
+  } finally {
+    ;(await cookies()).delete(GOOGLE_SESSION_COOKIE)
+  }
   revalidatePath('/')
 }
 

@@ -232,6 +232,15 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     authDialogRef.current?.showModal()
   }
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('auth') !== 'signin') return
+    setAuthMode('signin')
+    setAuthMessage(params.get('reset') === 'success' ? 'Password updated. Sign in with your new password.' : '')
+    authDialogRef.current?.showModal()
+    window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`)
+  }, [])
+
   const openCollectionChanger = (bookmarkID: string, websiteID: string) => {
     setActiveBookmarkID(bookmarkID)
     setPendingBookmark(initialSites.find((site) => site.id === websiteID) || null)

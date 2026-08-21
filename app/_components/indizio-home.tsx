@@ -443,9 +443,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
         <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link href="/library" aria-current={isLibraryPage ? 'page' : undefined}>Website library</Link>
-          <Link href="/#industries">Commerce patterns</Link>
           <Link href="/fieldnotes">CRO fieldnotes</Link>
-          <Link href="/#industries">Ecommerce ideas</Link>
         </nav>
         <div className="header-actions">
           {authenticated && (
@@ -463,7 +461,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
-        <Link href="/library">Website library</Link><Link href="/#industries">Commerce patterns</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/#industries">Ecommerce ideas</Link>
+        <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link>
         {authenticated && <Link href="/bookmarks">Bookmarks ({savedWebsiteIDs.size})</Link>}
         <button className="mobile-account-button" type="button" onClick={handleAccount}>{authenticated ? 'Log out' : 'Log in'}</button>
       </nav>
@@ -582,15 +580,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
         {!isLibraryPage && <><section className="explore-section ruled-section" id="industries" aria-labelledby="explore-heading">
           <div className="explore-section__heading">
-            <div><p className="eyebrow">Explore INDIZIO</p><h2 id="explore-heading">Five paths through modern commerce.</h2></div>
-            <p>Move from storefront inspiration to repeatable patterns, original research, practical ideas, and complete brand maps.</p>
+            <div><p className="eyebrow">Explore INDIZIO</p><h2 id="explore-heading">Three paths through modern commerce.</h2></div>
+            <p>Move from storefront inspiration to original research and complete brand maps.</p>
           </div>
           <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">
             <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
-            <a className="hero-path" href="#industries"><span className="hero-path__meta">02 / Building next</span><span className="hero-path__copy"><strong>Commerce patterns</strong><span>Buy boxes, cart drawers, cancel flows, and repeatable conversion patterns.</span></span><span className="hero-path__cta">Preview patterns <i aria-hidden="true">↗</i></span></a>
-            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
-            <a className="hero-path" href="#newsletter"><span className="hero-path__meta">04 / Coming soon</span><span className="hero-path__copy"><strong>Ecommerce ideas</strong><span>Practical concepts, experiments, and details worth testing on your own store.</span></span><span className="hero-path__cta">Get early access <i aria-hidden="true">↗</i></span></a>
-            <a className="hero-path hero-path--atlas" href="#newsletter"><span className="hero-path__meta">05 / Planned</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Map every useful page across an ecommerce domain—from products and collections to policies and conversion flows.</span></span><span className="hero-path__cta">Follow the build <i aria-hidden="true">↗</i></span></a>
+            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">02 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
+            <a className="hero-path hero-path--atlas" href="#newsletter"><span className="hero-path__meta">03 / Planned</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Map every useful page across an ecommerce domain—from products and collections to policies and conversion flows.</span></span><span className="hero-path__cta">Follow the build <i aria-hidden="true">↗</i></span></a>
           </div>
         </section>
 

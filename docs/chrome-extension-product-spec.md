@@ -272,7 +272,7 @@ Screenshot processing must happen asynchronously and must never block the user's
 
 ## 12. Relationship with Brand Atlas
 
-Brand Atlas is the planned fifth Indizio module. Its purpose is to map useful pages belonging to an ecommerce domain.
+Brand Atlas is a planned Indizio module. Its purpose is to map useful pages belonging to an ecommerce domain.
 
 The extension and Brand Atlas should share the same website/page model:
 
@@ -420,4 +420,3 @@ Resolve these before implementation begins:
 - Automated editorial articles
 - Chrome browsing-history collection
 - Support for browsers other than Chromium-based browsers
-

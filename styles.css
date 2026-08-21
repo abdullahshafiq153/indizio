@@ -720,16 +720,12 @@ button:disabled { cursor: wait; opacity: .58; }
 .account-section { padding: clamp(42px, 5vw, 72px) 44px; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: minmax(180px, .62fr) minmax(320px, 1fr); gap: clamp(32px, 5vw, 80px); }
 .account-section:last-child { border-bottom: 0; }
 .account-section h2 { margin: 12px 0 0; font-size: clamp(32px, 4vw, 64px); font-weight: 400; letter-spacing: -.05em; }
-.account-section form { min-width: 0; display: flex; flex-direction: column; gap: 0; border-bottom: 1px solid var(--rule); }
-.account-section label { min-height: 58px; padding-left: 16px; border: 1px solid var(--rule); border-bottom: 0; display: grid; grid-template-columns: 130px minmax(0, 1fr); align-items: center; font: 400 10px/1 var(--font-dm-mono), monospace; text-transform: uppercase; }
-.account-section input { width: 100%; height: 100%; min-height: 56px; padding: 0 16px; border: 0; border-left: 1px solid var(--rule); border-radius: 0; outline: 0; background: transparent; color: inherit; font: 400 15px/1 var(--font-manrope), sans-serif; text-transform: none; }
-.account-section input:focus { background: var(--white); box-shadow: inset 0 0 0 1px var(--ink); }
+.account-section form { display: flex; flex-direction: column; gap: 18px; }
+.account-section label { display: flex; flex-direction: column; gap: 8px; font: 400 11px/1 var(--font-dm-mono), monospace; text-transform: uppercase; }
+.account-section input { min-height: 50px; padding: 0 14px; border: 1px solid var(--rule); border-radius: 0; background: transparent; color: inherit; font: 400 15px/1 var(--font-manrope), sans-serif; }
 .account-section input[readonly] { color: var(--muted); background: #ededed; }
-.account-section form > .account-note { margin: 0; padding: 14px 16px; border: 1px solid var(--rule); border-bottom: 0; }
 .account-note { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.5; }
-.account-section form > .line-button { align-self: flex-start; margin-top: 18px; }
-.account-form-actions { margin-top: 18px; display: flex; align-items: center; gap: 20px; }
-.account-section .form-message { min-height: 16px; margin: 12px 0 0; }
+.account-form-actions { display: flex; align-items: center; gap: 20px; }
 .account-form-actions > a { color: inherit; font: 400 11px/1 var(--font-dm-mono), monospace; text-transform: uppercase; }
 .recovery-page { min-height: 100svh; padding: 7vw 24px; display: grid; place-items: center; }
 .recovery-page > section { width: min(660px, 100%); padding: clamp(30px, 6vw, 72px); border: 1px solid var(--rule); }
@@ -754,8 +750,5 @@ button:disabled { cursor: wait; opacity: .58; }
   .account-hero h1 { font-size: clamp(54px, 16vw, 78px); }
   .account-summary { padding: 32px 18px; }
   .account-section { padding: 38px 18px; }
-  .account-section label { padding: 12px 0 0; grid-template-columns: 1fr; gap: 10px; }
-  .account-section label { padding-left: 12px; }
-  .account-section input { min-height: 50px; margin-left: -12px; width: calc(100% + 12px); border-top: 1px solid var(--rule); border-left: 0; }
   .account-form-actions { align-items: flex-start; flex-direction: column; }
 }

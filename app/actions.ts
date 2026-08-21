@@ -21,6 +21,66 @@ export type BookmarkActionResult = ActionResult & {
   saveCount?: number
 }
 
+export async function updateAccountProfile(formData: FormData): Promise<ActionResult> {
+  const session = await currentMember()
+  if (!session) return { ok: false, message: 'Sign in to update your account.' }
+  const name = value(formData, 'name')
+  if (name.length < 2 || name.length > 80) return { ok: false, message: 'Enter a name between 2 and 80 characters.' }
+  try {
+    await session.payload.update({ collection: 'members', id: session.user.id, data: { name }, overrideAccess: false, user: session.user })
+    revalidatePath('/account'); revalidatePath('/'); revalidatePath('/library')
+    return { ok: true, message: 'Profile updated.' }
+  } catch {
+    return { ok: false, message: 'We could not update your profile.' }
+  }
+}
+
+export async function changeAccountPassword(formData: FormData): Promise<ActionResult> {
+  const session = await currentMember()
+  if (!session?.user.email) return { ok: false, message: 'Sign in to update your password.' }
+  const currentPassword = value(formData, 'currentPassword')
+  const password = value(formData, 'password')
+  const confirmation = value(formData, 'confirmation')
+  if (password.length < 8) return { ok: false, message: 'Use at least 8 characters for the new password.' }
+  if (password !== confirmation) return { ok: false, message: 'The new passwords do not match.' }
+  try {
+    await session.payload.login({ collection: 'members', data: { email: session.user.email, password: currentPassword } })
+    await session.payload.update({ collection: 'members', id: session.user.id, data: { password }, overrideAccess: true })
+    return { ok: true, message: 'Password updated.' }
+  } catch {
+    return { ok: false, message: 'Your current password was not recognized.' }
+  }
+}
+
+export async function requestPasswordReset(formData: FormData): Promise<ActionResult> {
+  const email = value(formData, 'email').toLowerCase()
+  if (email.includes('@') && process.env.DATABASE_URL) {
+    try {
+      const payload = await getPayload({ config })
+      await payload.forgotPassword({ collection: 'members', data: { email }, disableEmail: false })
+    } catch {
+      // Keep the response identical so account existence cannot be inferred.
+    }
+  }
+  return { ok: true, message: 'If an account exists for that email, a reset link is on its way.' }
+}
+
+export async function resetAccountPassword(formData: FormData): Promise<ActionResult> {
+  const token = value(formData, 'token')
+  const password = value(formData, 'password')
+  const confirmation = value(formData, 'confirmation')
+  if (!token) return { ok: false, message: 'This reset link is invalid.' }
+  if (password.length < 8) return { ok: false, message: 'Use at least 8 characters for your new password.' }
+  if (password !== confirmation) return { ok: false, message: 'The passwords do not match.' }
+  try {
+    const payload = await getPayload({ config })
+    await payload.resetPassword({ collection: 'members', data: { password, token }, overrideAccess: true })
+    return { ok: true, message: 'Password reset. You can now sign in.' }
+  } catch {
+    return { ok: false, message: 'This reset link is invalid or has expired.' }
+  }
+}
+
 const unavailable = (): ActionResult => ({
   ok: false,
   message: 'Accounts are being connected. Please try again shortly.',

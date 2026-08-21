@@ -11,7 +11,6 @@ import {
   moveBookmark,
   removeBookmark,
   renameBookmarkCollection,
-  signOut,
   subscribeNewsletter,
 } from '../actions'
 import type {
@@ -20,6 +19,7 @@ import type {
   SavedBookmarkSummary,
 } from '../_data/load-library-data'
 import type { Site } from '../_data/sites'
+import { AccountMenu } from './account-menu'
 
 type Props = {
   initialSites: Site[]
@@ -91,14 +91,6 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
   )
   const collectionName = (collectionID: string | null) =>
     (collectionID ? collectionByID.get(collectionID)?.name : null) || 'All Bookmarks'
-
-  const handleSignOut = () => {
-    startTransition(async () => {
-      await signOut()
-      router.push('/')
-      router.refresh()
-    })
-  }
 
   const handleNewsletter = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -226,16 +218,14 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
         </nav>
         <div className="header-actions">
           {initialMember && <Link className="bookmark-collection" href="/bookmarks" aria-current="page" aria-label={`View ${bookmarks.length} saved websites`}><BookmarkIcon /><span>{bookmarks.length}</span></Link>}
-          <button className="line-button header-cta" type="button" onClick={initialMember ? handleSignOut : () => router.push('/')} disabled={isPending}>
-            <span>{initialMember ? 'Log out' : 'Login / Register'}</span><span className="line-button__icon" aria-hidden="true">→</span>
-          </button>
+          {initialMember ? <AccountMenu member={initialMember} /> : <button className="line-button header-cta" type="button" onClick={() => router.push('/')}><span>Login / Register</span><span className="line-button__icon" aria-hidden="true">→</span></button>}
         </div>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
         <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/bookmarks">Bookmarks ({bookmarks.length})</Link>
-        <button className="mobile-account-button" type="button" onClick={initialMember ? handleSignOut : () => router.push('/')}>{initialMember ? 'Log out' : 'Log in'}</button>
+        {initialMember ? <Link href="/account">Manage account</Link> : <button className="mobile-account-button" type="button" onClick={() => router.push('/')}>Log in</button>}
       </nav>
 
       <main className="bookmarks-page ruled-section">

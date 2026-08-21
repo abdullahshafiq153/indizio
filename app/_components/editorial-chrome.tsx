@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState, useTransition } from 'react'
 
-import { signOut, subscribeNewsletter } from '../actions'
+import { subscribeNewsletter } from '../actions'
 import type { MemberSummary } from '../_data/load-library-data'
+import { AccountMenu } from './account-menu'
 
 type ActiveNav = 'library' | 'fieldnotes' | 'atlas'
 
@@ -23,20 +24,17 @@ const navItems: Array<{ id: ActiveNav; href: string; label: string }> = [
   { id: 'atlas', href: '/atlas', label: 'Brand Atlas' },
 ]
 
-export function EditorialHeader({ active, member, bookmarkCount }: { active: ActiveNav; member: MemberSummary | null; bookmarkCount: number }) {
+export function EditorialHeader({ active, member, bookmarkCount }: { active?: ActiveNav; member: MemberSummary | null; bookmarkCount: number }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const handleAccount = () => {
     if (!member) {
       router.push('/')
       return
     }
-    startTransition(async () => {
-      await signOut()
-      router.refresh()
-    })
+    router.push('/')
   }
 
   return (
@@ -52,16 +50,14 @@ export function EditorialHeader({ active, member, bookmarkCount }: { active: Act
         </nav>
         <div className="header-actions">
           {member && <Link className="bookmark-collection" href="/bookmarks" aria-label={`View ${bookmarkCount} saved websites`}><BookmarkIcon /><span>{bookmarkCount}</span></Link>}
-          <button className="line-button header-cta" type="button" onClick={handleAccount} disabled={isPending}>
-            <span>{member ? 'Log out' : 'Login / Register'}</span><span className="line-button__icon" aria-hidden="true">→</span>
-          </button>
+          {member ? <AccountMenu member={member} /> : <button className="line-button header-cta" type="button" onClick={handleAccount}><span>Login / Register</span><span className="line-button__icon" aria-hidden="true">→</span></button>}
         </div>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="editorial-mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
       <nav className="mobile-menu" id="editorial-mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
         {navItems.map((item) => <Link key={item.id} href={item.href} aria-current={active === item.id ? 'page' : undefined}>{item.label}</Link>)}
-        {member && <Link href="/bookmarks">Bookmarks ({bookmarkCount})</Link>}
-        <button className="mobile-account-button" type="button" onClick={handleAccount}>{member ? 'Log out' : 'Log in'}</button>
+        {member && <><Link href="/bookmarks">Bookmarks ({bookmarkCount})</Link><Link href="/account">Manage account</Link></>}
+        {!member && <button className="mobile-account-button" type="button" onClick={handleAccount}>Log in</button>}
       </nav>
     </>
   )

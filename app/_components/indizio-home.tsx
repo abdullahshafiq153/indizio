@@ -10,7 +10,6 @@ import {
   removeBookmark,
   saveBookmark,
   signIn,
-  signOut,
   signUp,
   subscribeNewsletter,
 } from '../actions'
@@ -20,6 +19,7 @@ import type {
   SavedBookmarkSummary,
 } from '../_data/load-library-data'
 import type { Site } from '../_data/sites'
+import { AccountMenu } from './account-menu'
 
 type SortMode = 'featured' | 'newest' | 'az'
 type GridColumns = 2 | 3 | 4
@@ -318,15 +318,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   }
 
   const handleAccount = () => {
-    if (!authenticated) {
-      openAuth()
-      return
-    }
-    startTransition(async () => {
-      await signOut()
-      setSavedOnly(false)
-      router.refresh()
-    })
+    openAuth()
   }
 
   const handleAuth = (event: FormEvent<HTMLFormElement>) => {
@@ -464,17 +456,15 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               </Link>
             </div>
           )}
-          <button className="line-button header-cta" type="button" onClick={handleAccount} disabled={isPending}>
-            <span>{authenticated ? 'Log out' : 'Login / Register'}</span><span className="line-button__icon" aria-hidden="true">→</span>
-          </button>
+          {authenticated && initialMember ? <AccountMenu member={initialMember} /> : <button className="line-button header-cta" type="button" onClick={handleAccount}><span>Login / Register</span><span className="line-button__icon" aria-hidden="true">→</span></button>}
         </div>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
         <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link>
-        {authenticated && <Link href="/bookmarks">Bookmarks ({savedWebsiteIDs.size})</Link>}
-        <button className="mobile-account-button" type="button" onClick={handleAccount}>{authenticated ? 'Log out' : 'Log in'}</button>
+        {authenticated && <><Link href="/bookmarks">Bookmarks ({savedWebsiteIDs.size})</Link><Link href="/account">Manage account</Link></>}
+        {!authenticated && <button className="mobile-account-button" type="button" onClick={handleAccount}>Log in</button>}
       </nav>
 
       <main id="top">
@@ -691,6 +681,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             {authMode === 'signup' && <><label htmlFor="account-name">Name</label><input id="account-name" name="name" type="text" placeholder="Your name" autoComplete="name" required /></>}
             <label htmlFor="account-email">Email address</label><input id="account-email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
             <label htmlFor="account-password">Password</label><input id="account-password" name="password" type="password" placeholder="At least 8 characters" minLength={8} autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} required />
+            {authMode === 'signin' && <Link className="auth-forgot-link" href="/forgot-password">Forgot password?</Link>}
             {authMode === 'signup' && googleNewsletterConsent && <input name="newsletterConsent" type="hidden" value="on" />}
             <button className="line-button line-button--dark" type="submit" disabled={isPending}><span>{isPending ? 'Please wait…' : authMode === 'signup' ? 'Create account' : 'Sign in'}</span><span className="line-button__icon" aria-hidden="true">→</span></button>
           </form>

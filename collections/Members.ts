@@ -6,6 +6,16 @@ import { googleSessionFromHeaders } from '../lib/google-session'
 export const Members: CollectionConfig = {
   slug: 'members',
   auth: {
+    forgotPassword: {
+      expiration: 30 * 60 * 1000,
+      generateEmailSubject: () => 'Reset your INDIZIO password',
+      generateEmailHTML: (args) => {
+        const token = args?.token
+        const origin = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+        const resetURL = `${origin}/reset-password?token=${encodeURIComponent(String(token))}`
+        return `<div style="font-family:Arial,sans-serif;color:#000"><p>INDIZIO</p><h1>Reset your password</h1><p>This link expires in 30 minutes.</p><p><a href="${resetURL}">Choose a new password</a></p><p>If you did not request this, you can ignore this email.</p></div>`
+      },
+    },
     strategies: [{
       name: 'google-session',
       authenticate: async ({ headers, payload }) => {

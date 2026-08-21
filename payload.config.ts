@@ -1,4 +1,5 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { buildConfig } from 'payload'
@@ -50,6 +51,11 @@ export default buildConfig({
     url: process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/indizio',
   }),
   editor: lexicalEditor(),
+  email: resendAdapter({
+    apiKey: process.env.RESEND_API_KEY || '',
+    defaultFromAddress: process.env.AUTH_FROM_EMAIL || 'accounts@indizio.space',
+    defaultFromName: 'INDIZIO',
+  }),
   plugins: [
     vercelBlobStorage({
       collections: {

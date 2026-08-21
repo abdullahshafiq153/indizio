@@ -582,19 +582,42 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
         {!isLibraryPage && <><section className="explore-section ruled-section" id="industries" aria-labelledby="explore-heading">
           <div className="explore-section__heading">
-            <div><p className="eyebrow">Explore INDIZIO</p><h2 id="explore-heading">Four paths through modern commerce.</h2></div>
-            <p>Move from storefront inspiration to repeatable patterns, original research, and practical ideas worth testing.</p>
+            <div><p className="eyebrow">Explore INDIZIO</p><h2 id="explore-heading">Five paths through modern commerce.</h2></div>
+            <p>Move from storefront inspiration to repeatable patterns, original research, practical ideas, and complete brand maps.</p>
           </div>
           <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">
             <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
             <a className="hero-path" href="#industries"><span className="hero-path__meta">02 / Building next</span><span className="hero-path__copy"><strong>Commerce patterns</strong><span>Buy boxes, cart drawers, cancel flows, and repeatable conversion patterns.</span></span><span className="hero-path__cta">Preview patterns <i aria-hidden="true">↗</i></span></a>
             <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">03 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
             <a className="hero-path" href="#newsletter"><span className="hero-path__meta">04 / Coming soon</span><span className="hero-path__copy"><strong>Ecommerce ideas</strong><span>Practical concepts, experiments, and details worth testing on your own store.</span></span><span className="hero-path__cta">Get early access <i aria-hidden="true">↗</i></span></a>
+            <a className="hero-path hero-path--atlas" href="#newsletter"><span className="hero-path__meta">05 / Planned</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Map every useful page across an ecommerce domain—from products and collections to policies and conversion flows.</span></span><span className="hero-path__cta">Follow the build <i aria-hidden="true">↗</i></span></a>
           </div>
         </section>
 
         <section className="stat-strip" aria-label="Library statistics">
           <div><strong>001</strong><span>Edition</span></div><div><strong>{loading ? <span className="skeleton-block skeleton-stat-value" aria-label="Loading website total" /> : String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
+        </section>
+
+        <section className="extension-section ruled-section" aria-labelledby="extension-heading">
+          <div className="extension-section__copy">
+            <p className="eyebrow">Indizio for Chrome / Coming soon</p>
+            <h2 id="extension-heading">Keep the clue.<br />Without leaving the page.</h2>
+            <p>Save any ecommerce website to Indizio while you browse, organize it into a research collection, and return to everything from one workspace.</p>
+            <a className="line-button" href="#newsletter"><span>Join the extension waitlist</span><span className="line-button__icon" aria-hidden="true">↗</span></a>
+          </div>
+          <div className="extension-preview" aria-label="Preview of the planned Indizio Chrome extension">
+            <div className="extension-preview__bar"><span /><span>indizio.space</span><span>•••</span></div>
+            <div className="extension-preview__body">
+              <div className="extension-preview__brand"><span>INDIZIO</span><span>●</span></div>
+              <p className="eyebrow">Save to your research</p>
+              <strong>Remarkable storefront found.</strong>
+              <div className="extension-preview__site"><span>Current website</span><span>↗</span></div>
+              <label>Collection</label>
+              <div className="extension-preview__select"><span>Website inspiration</span><span>⌄</span></div>
+              <div className="extension-preview__button"><span>Save to Indizio</span><span>+</span></div>
+            </div>
+            <div className="extension-preview__note"><span>01</span><p>One click from discovery to an organized research library.</p></div>
+          </div>
         </section>
 
         <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>What 100 storefronts tell us about ecommerce now.</h2><p>The first Indizio Index maps the design decisions, trust signals, and merchandising patterns appearing across twelve industries.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>

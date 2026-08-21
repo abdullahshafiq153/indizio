@@ -25,8 +25,11 @@ type AtlasRun = {
 
 const PAGE_TYPES = ['all', 'homepage', 'product', 'collection', 'blog', 'article', 'page', 'about', 'help', 'policy', 'account', 'cart', 'checkout', 'search', 'gift-card', 'other']
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
+function formatDate(value?: string | null) {
+  if (!value) return 'Date unavailable'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Date unavailable'
+  return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
 }
 
 export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {

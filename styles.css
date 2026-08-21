@@ -24,6 +24,7 @@ button { cursor: pointer; }
 .error-page__copy { padding: clamp(70px, 10vw, 150px) 44px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .error-page__copy h1 { max-width: 1050px; }
 .error-page__copy > p:not(.eyebrow) { max-width: 520px; margin: 32px 0; color: var(--muted); font-size: 18px; line-height: 1.55; }
+.error-page__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .error-page__code { margin: 0 -1vw -3vw; font-size: clamp(180px, 38vw, 560px); font-weight: 600; letter-spacing: -.12em; line-height: .62; opacity: .08; pointer-events: none; }
 
 .announcement { min-height: 34px; padding: 0 28px; border-bottom: 1px solid var(--rule); background: var(--paper); display: flex; align-items: center; justify-content: space-between; font: 500 10px/1 var(--font-dm-mono), monospace; letter-spacing: .08em; text-transform: uppercase; }

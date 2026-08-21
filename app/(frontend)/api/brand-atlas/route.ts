@@ -128,6 +128,7 @@ export async function GET(request: Request) {
       sitemapCount: true,
       truncated: true,
       completedAt: true,
+      createdAt: true,
       error: true,
     },
   })

@@ -8,7 +8,7 @@ export const Articles: CollectionConfig = {
   admin: {
     group: 'Editorial',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'space', 'industry', 'publishedAt', '_status'],
+    defaultColumns: ['title', 'featured', 'space', 'industry', 'publishedAt', '_status'],
   },
   access: {
     read: ({ req }) => req.user?.collection === 'admins' || { _status: { equals: 'published' } },
@@ -21,6 +21,7 @@ export const Articles: CollectionConfig = {
     { name: 'title', type: 'text', required: true },
     slugField,
     { name: 'excerpt', type: 'textarea', required: true },
+    { name: 'featured', type: 'checkbox', defaultValue: false, label: 'Featured note', index: true },
     {
       name: 'space',
       type: 'select',

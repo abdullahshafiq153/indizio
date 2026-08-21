@@ -16,6 +16,7 @@ export type Fieldnote = {
   type: string
   publishedAt: string
   readingTime: number
+  featured?: boolean
   content?: Record<string, unknown>
   fallbackContent?: FieldnoteContentBlock[]
 }
@@ -30,6 +31,7 @@ type ArticleSelection = {
   type?: string | null
   publishedAt?: string | null
   readingTime?: number | null
+  featured?: boolean | null
   content?: Record<string, unknown> | null
   createdAt?: string | null
 }
@@ -44,6 +46,7 @@ export const fallbackFieldnotes: Fieldnote[] = [
     type: 'Brand teardown',
     publishedAt: '2026-08-08T12:00:00.000Z',
     readingTime: 8,
+    featured: true,
     fallbackContent: [
       { type: 'paragraph', text: 'Most product pages are organized around content. The strongest ones are organized around hesitation. Every section earns its place by resolving a question that might otherwise delay the purchase.' },
       { type: 'heading', text: 'The buy box is a decision system' },
@@ -64,6 +67,7 @@ export const fallbackFieldnotes: Fieldnote[] = [
     type: 'Pattern report',
     publishedAt: '2026-08-01T12:00:00.000Z',
     readingTime: 7,
+    featured: true,
     fallbackContent: [
       { type: 'paragraph', text: 'A cart drawer has one job: preserve momentum. Yet many stores turn it into a dense inventory table or an aggressive upsell surface. Both choices add friction at the moment confidence should be highest.' },
       { type: 'heading', text: 'Momentum before monetization' },
@@ -126,6 +130,7 @@ function mapArticle(article: ArticleSelection): Fieldnote {
     type: typeLabel(article.type),
     publishedAt: article.publishedAt || article.createdAt || new Date().toISOString(),
     readingTime: article.readingTime || 6,
+    featured: Boolean(article.featured),
     content: article.content || undefined,
   }
 }
@@ -149,6 +154,7 @@ export const loadFieldnotes = cache(async (): Promise<Fieldnote[]> => {
         type: true,
         publishedAt: true,
         readingTime: true,
+        featured: true,
         content: true,
         createdAt: true,
       },

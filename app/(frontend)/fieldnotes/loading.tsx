@@ -9,6 +9,10 @@ export default function FieldnotesLoading() {
           <div><p className="eyebrow">03 / CRO Fieldnotes</p><h1>Research for better decisions.</h1></div>
           <p>Long-form brand teardowns, industry blueprints, and conversion patterns.</p>
         </header>
+        <section className="featured-fieldnotes featured-fieldnotes--skeleton" aria-label="Loading featured notes">
+          <div className="featured-fieldnotes__heading"><span className="skeleton-block" /><span className="skeleton-block" /></div>
+          <div className="featured-fieldnotes__grid">{[0, 1].map((item) => <div className="featured-fieldnote" key={item}><span className="skeleton-block" /><span className="skeleton-block" /><span className="skeleton-block" /></div>)}</div>
+        </section>
         <div className="fieldnotes-list">
           {[0, 1, 2, 3].map((item) => <div className="fieldnote-row fieldnote-row--skeleton" key={item}><span className="skeleton-block" /><div><span className="skeleton-block" /><span className="skeleton-block" /><span className="skeleton-block" /></div></div>)}
         </div>

@@ -26,6 +26,10 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('en', {
 
 export default async function FieldnotesPage() {
   const [articles, viewer] = await Promise.all([loadFieldnotes(), loadEditorialViewer()])
+  const selectedFeatured = articles.filter((article) => article.featured)
+  const featured = (selectedFeatured.length ? selectedFeatured : articles).slice(0, 2)
+  const featuredIds = new Set(featured.map((article) => article.id))
+  const remainingArticles = articles.filter((article) => !featuredIds.has(article.id))
 
   return (
     <>
@@ -40,13 +44,34 @@ export default async function FieldnotesPage() {
           <p>Long-form brand teardowns, industry blueprints, and conversion patterns—written to explain not only what works, but why.</p>
         </header>
 
+        <section className="featured-fieldnotes" aria-labelledby="featured-fieldnotes-heading">
+          <header className="featured-fieldnotes__heading">
+            <p className="eyebrow">Featured notes</p>
+            <h2 id="featured-fieldnotes-heading">Start with the essential reads.</h2>
+            <p>Selected research for the decisions shaping modern ecommerce.</p>
+          </header>
+          <div className="featured-fieldnotes__grid">
+            {featured.map((article, index) => (
+              <article className="featured-fieldnote" key={article.id}>
+                <div className="featured-fieldnote__meta"><span>0{index + 1}</span><span>{article.industry}</span><span>{article.readingTime} min</span></div>
+                <div className="featured-fieldnote__copy">
+                  <div className="fieldnote-row__tags"><span>{article.type}</span></div>
+                  <h3><Link href={`/fieldnotes/${article.slug}`}>{article.title}</Link></h3>
+                  <p>{article.excerpt}</p>
+                </div>
+                <Link className="featured-fieldnote__cta" href={`/fieldnotes/${article.slug}`}><span>Read featured note</span><i aria-hidden="true">↗</i></Link>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <div className="fieldnotes-index-meta">
-          <p>{articles.length.toString().padStart(2, '0')} published notes</p>
+          <p>{remainingArticles.length.toString().padStart(2, '0')} more published notes</p>
           <p>Newest first</p>
         </div>
 
         <section className="fieldnotes-list" aria-label="CRO fieldnotes">
-          {articles.map((article, index) => (
+          {remainingArticles.map((article, index) => (
             <article className="fieldnote-row" key={article.id}>
               <div className="fieldnote-row__number">{String(index + 1).padStart(2, '0')}</div>
               <div className="fieldnote-row__content">

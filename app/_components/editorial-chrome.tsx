@@ -7,7 +7,7 @@ import { FormEvent, useState, useTransition } from 'react'
 import { signOut, subscribeNewsletter } from '../actions'
 import type { MemberSummary } from '../_data/load-library-data'
 
-type ActiveNav = 'library' | 'fieldnotes'
+type ActiveNav = 'library' | 'fieldnotes' | 'atlas'
 
 function BookmarkIcon() {
   return (
@@ -20,6 +20,7 @@ function BookmarkIcon() {
 const navItems: Array<{ id: ActiveNav; href: string; label: string }> = [
   { id: 'library', href: '/library', label: 'Website library' },
   { id: 'fieldnotes', href: '/fieldnotes', label: 'CRO fieldnotes' },
+  { id: 'atlas', href: '/atlas', label: 'Brand Atlas' },
 ]
 
 export function EditorialHeader({ active, member, bookmarkCount }: { active: ActiveNav; member: MemberSummary | null; bookmarkCount: number }) {
@@ -95,7 +96,7 @@ export function EditorialFooter() {
       </section>
       <div className="footer-meta">
         <div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div>
-        <div><p className="footer-label">Explore</p><Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link></div>
+        <div><p className="footer-label">Explore</p><Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link></div>
         <div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div>
         <div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div>
       </div>

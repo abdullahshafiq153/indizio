@@ -1,13 +1,24 @@
 # Indizio Brand Atlas / Scraper — Living Product Specification
 
-**Status:** Planned; not yet being built  
+**Status:** V1 built; validation and iteration ongoing
 **Last updated:** August 22, 2026
 
 ## 1. Purpose
 
 Brand Atlas maps the useful public URLs belonging to an ecommerce domain so users can find product, collection, editorial, policy, account, and conversion-flow pages from one Indizio workspace.
 
-It is the scraper/crawler module discussed for Indizio. Crawling is intentionally deferred until the Website Library, ingestion workflow, and extension discovery model are ready.
+It is the scraper/crawler module discussed for Indizio. The first version now supports authenticated user searches, persistent private history, sitemap-first discovery, and bounded same-domain fallback crawling.
+
+## Current V1 behavior
+
+- Users can enter a brand name already present in the Website Library.
+- Users can paste a public HTTP or HTTPS website URL for any other brand.
+- Completed results are reused from the user's history unless they explicitly refresh the map.
+- Runs continue after the initiating response and the interface polls their stored status.
+- Results can be searched, filtered by page type, copied, and exported as CSV.
+- Discovery checks declared sitemaps first and uses public same-domain links as a fallback and enrichment source.
+- Each result is private to its owner and manageable in Payload by administrators.
+- A run stores up to 5,000 URLs and clearly reports when that safety limit was reached.
 
 ## 2. Core use case
 
@@ -149,4 +160,3 @@ Do not publish raw crawl output. Public results should be deduplicated, categori
 - Recrawl frequency
 - Whether screenshots are generated for every approved page or on demand
 - Public naming: Brand Atlas, Site Map, Page Index, or another final label
-

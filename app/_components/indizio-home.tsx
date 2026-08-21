@@ -444,6 +444,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link href="/library" aria-current={isLibraryPage ? 'page' : undefined}>Website library</Link>
           <Link href="/fieldnotes">CRO fieldnotes</Link>
+          <Link href="/atlas">Brand Atlas</Link>
         </nav>
         <div className="header-actions">
           {authenticated && (
@@ -461,7 +462,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
-        <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link>
+        <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link>
         {authenticated && <Link href="/bookmarks">Bookmarks ({savedWebsiteIDs.size})</Link>}
         <button className="mobile-account-button" type="button" onClick={handleAccount}>{authenticated ? 'Log out' : 'Log in'}</button>
       </nav>
@@ -586,7 +587,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">
             <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
             <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">02 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
-            <a className="hero-path hero-path--atlas" href="#newsletter"><span className="hero-path__meta">03 / Planned</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Map every useful page across an ecommerce domain—from products and collections to policies and conversion flows.</span></span><span className="hero-path__cta">Follow the build <i aria-hidden="true">↗</i></span></a>
+            <Link className="hero-path hero-path--atlas" href="/atlas"><span className="hero-path__meta">03 / Live now</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Map every useful page across an ecommerce domain—from products and collections to policies and conversion flows.</span></span><span className="hero-path__cta">Map a brand <i aria-hidden="true">↗</i></span></Link>
           </div>
         </section>
 
@@ -627,7 +628,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
       <footer className="site-footer">
         {isLibraryPage && <section className="footer-newsletter" id="newsletter"><div><p className="footer-label">Indizio weekly</p><p className="footer-newsletter__headline">Seven signals, every Thursday.</p></div><div className="footer-newsletter__signup"><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="footer-email">Email address</label><input id="footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
-        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/#industries">Industries</Link><Link href="/#index-report">Research</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
+        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
       </footer>
 
       {bookmarkToast && (

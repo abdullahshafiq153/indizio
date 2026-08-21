@@ -10,6 +10,7 @@ import { Articles } from './collections/Articles'
 import { BookmarkCollections } from './collections/BookmarkCollections'
 import { Bookmarks } from './collections/Bookmarks'
 import { Curations } from './collections/Curations'
+import { CrawlRuns } from './collections/CrawlRuns'
 import { Industries } from './collections/Industries'
 import { Media } from './collections/Media'
 import { Members } from './collections/Members'
@@ -43,6 +44,7 @@ export default buildConfig({
     Articles,
     BookmarkCollections,
     Bookmarks,
+    CrawlRuns,
   ],
   db: mongooseAdapter({
     url: process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/indizio',

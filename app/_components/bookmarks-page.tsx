@@ -244,7 +244,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
         ) : (
           <div className="bookmarks-layout">
             <aside className="bookmarks-sidebar" aria-label="Bookmark collections">
-              <p className="filter-label">Collections</p>
+              <div className="atlas-panel-heading"><span>Collections</span><span>{collections.length}</span></div>
               <button className={selectedCollection === null ? 'active' : ''} type="button" onClick={() => setSelectedCollection(null)}>
                 <span>All saves</span><strong>{bookmarks.length}</strong>
               </button>

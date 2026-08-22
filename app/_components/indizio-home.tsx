@@ -235,10 +235,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('auth') !== 'signin') return
-    setAuthMode('signin')
-    setAuthMessage(params.get('reset') === 'success' ? 'Password updated. Sign in with your new password.' : '')
-    authDialogRef.current?.showModal()
-    window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`)
+    const timer = window.setTimeout(() => {
+      setAuthMode('signin')
+      setAuthMessage(params.get('reset') === 'success' ? 'Password updated. Sign in with your new password.' : '')
+      authDialogRef.current?.showModal()
+      window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`)
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [])
 
   const openCollectionChanger = (bookmarkID: string, websiteID: string) => {
@@ -521,7 +524,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             <p>{loading ? <span className="skeleton-block skeleton-results-count" aria-label="Loading website count" /> : <>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</>}</p>
             <div className="results-controls">
               {!isLibraryPage && <button className="industries-toggle" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)} disabled={loading}>
-                <span>Industries</span><span>{industries.size || 'All'}</span><i aria-hidden="true">⌄</i>
+                <span>Industries</span><span>{industries.size || 'All'}</span><i aria-hidden="true" />
               </button>}
               <label className="view-select">View
                 <select value={gridColumns} onChange={(event) => setGridColumns(Number(event.target.value) as GridColumns)} aria-label="Cards per row" disabled={loading}>
@@ -541,14 +544,14 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                 <span className="skeleton-block skeleton-card__title" />
                 <span className="skeleton-block skeleton-card__detail" />
               </article>
-            )) : filteredSites.slice(0, visible).map((site) => {
+            )) : filteredSites.slice(0, visible).map((site, index) => {
               const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
               const saveCount = saveCounts.get(site.id || '') || 0
               return (
                 <article className="site-card" key={site.name}>
                   <div className="card-visual">
                     <button className="card-open" type="button" onClick={() => { setSelectedSite(site); siteDialogRef.current?.showModal() }} aria-label={`Open ${site.name} fieldnote`}>
-                      {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, (max-width: 1440px) 25vw, 320px" quality={70} />}
+                      {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, (max-width: 1440px) 25vw, 320px" quality={70} preload={index < 3} />}
                       {!site.coverImage && <span className="card-mark">{site.name}</span>}
                     </button>
                   </div>

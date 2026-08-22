@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FormEvent, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { MemberSummary } from '../_data/load-library-data'
 
@@ -45,7 +45,13 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   const [resultQuery, setResultQuery] = useState('')
   const [suggestions, setSuggestions] = useState<AtlasSuggestion[]>([])
   const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const [resultWindow, setResultWindow] = useState({ key: '', count: 150 })
   const autoRunRef = useRef(false)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const suggestionCacheRef = useRef(new Map<string, AtlasSuggestion[]>())
+  const deferredResultQuery = useDeferredValue(resultQuery)
+  const resultWindowKey = `${selectedRun?.id || ''}:${type}:${deferredResultQuery}`
+  const visibleCount = resultWindow.key === resultWindowKey ? resultWindow.count : 150
 
   const loadHistory = useCallback(async () => {
     if (!member) return
@@ -135,14 +141,23 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   useEffect(() => {
     const value = query.trim()
     if (value.length < 2 || loading) return
+    const cacheKey = value.toLowerCase()
+    const cached = suggestionCacheRef.current.get(cacheKey)
+    if (cached) {
+      setSuggestions(cached)
+      setSuggestionsOpen(Boolean(cached.length))
+      return
+    }
     const controller = new AbortController()
     const timer = window.setTimeout(async () => {
       try {
         const response = await fetch(`/api/brand-atlas?suggest=${encodeURIComponent(value)}`, { cache: 'no-store', signal: controller.signal })
         const data = await response.json()
         if (!response.ok) return
-        setSuggestions(data.suggestions || [])
-        setSuggestionsOpen(Boolean(data.suggestions?.length))
+        const nextSuggestions = data.suggestions || []
+        suggestionCacheRef.current.set(cacheKey, nextSuggestions)
+        setSuggestions(nextSuggestions)
+        setSuggestionsOpen(Boolean(nextSuggestions.length))
       } catch {
         // Autocomplete is optional and should never interrupt the main search flow.
       }
@@ -151,13 +166,23 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   }, [loading, query])
 
   const filteredPages = useMemo(() => {
-    const normalized = resultQuery.trim().toLowerCase()
+    const normalized = deferredResultQuery.trim().toLowerCase()
     return (selectedRun?.pages || []).filter((page) => {
       const matchesType = type === 'all' || page.type === type
       const matchesQuery = !normalized || `${page.url} ${page.title || ''}`.toLowerCase().includes(normalized)
       return matchesType && matchesQuery
     })
-  }, [resultQuery, selectedRun?.pages, type])
+  }, [deferredResultQuery, selectedRun?.pages, type])
+
+  useEffect(() => {
+    const target = loadMoreRef.current
+    if (!target || visibleCount >= filteredPages.length) return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) setResultWindow({ key: resultWindowKey, count: Math.min(visibleCount + 150, filteredPages.length) })
+    }, { rootMargin: '600px' })
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [filteredPages.length, resultWindowKey, visibleCount])
 
   const copyURLs = async () => {
     await navigator.clipboard.writeText(filteredPages.map((page) => page.url).join('\n'))
@@ -229,8 +254,9 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
               </div>
               <div className="atlas-results__meta"><span>{filteredPages.length} shown</span><span>Saved {formatDate(selectedRun.completedAt || selectedRun.createdAt)}</span></div>
               <ol className="atlas-url-list">
-                {filteredPages.map((page, index) => <li key={page.url}><span>{String(index + 1).padStart(3, '0')}</span><div><strong>{page.title || page.path || '/'}</strong><a href={page.url} target="_blank" rel="noreferrer">{page.url}</a></div><span className={`atlas-url-tag atlas-url-tag--${page.type}`}>{page.type}</span><a href={page.url} target="_blank" rel="noreferrer" aria-label={`Open ${page.url}`}>↗</a></li>)}
+                {filteredPages.slice(0, visibleCount).map((page, index) => <li key={page.url}><span>{String(index + 1).padStart(3, '0')}</span><div><strong>{page.title || page.path || '/'}</strong><a href={page.url} target="_blank" rel="noreferrer">{page.url}</a></div><span className={`atlas-url-tag atlas-url-tag--${page.type}`}>{page.type}</span><a href={page.url} target="_blank" rel="noreferrer" aria-label={`Open ${page.url}`}>↗</a></li>)}
               </ol>
+              {visibleCount < filteredPages.length && <div className="atlas-load-more" ref={loadMoreRef} aria-hidden="true"><span className="atlas-spinner" /></div>}
             </>
           )}
         </section>

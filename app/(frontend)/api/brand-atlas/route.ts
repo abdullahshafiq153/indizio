@@ -112,10 +112,10 @@ async function resolveInput(payload: Awaited<ReturnType<typeof getPayload>>, inp
 }
 
 export async function GET(request: Request) {
-  const { payload, user } = await authenticatedContext(request)
   const requestURL = new URL(request.url)
   const suggestionQuery = requestURL.searchParams.get('suggest')?.trim().slice(0, 80) || ''
   if (suggestionQuery.length >= 2) {
+    const payload = await getPayload({ config })
     const result = await payload.find({
       collection: 'crawl-runs',
       depth: 0,
@@ -137,8 +137,9 @@ export async function GET(request: Request) {
       seen.add(run.domain)
       return true
     }).slice(0, 6).map((run) => ({ brandName: run.brandName, domain: run.domain, startURL: run.startURL, urlCount: run.urlCount || 0, completedAt: run.completedAt || null }))
-    return NextResponse.json({ suggestions })
+    return NextResponse.json({ suggestions }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } })
   }
+  const { payload, user } = await authenticatedContext(request)
   if (!user) return NextResponse.json({ message: 'Sign in to view Brand Atlas history.' }, { status: 401 })
 
   const id = requestURL.searchParams.get('id')
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
 
   try {
     const target = await resolveInput(payload, input)
-    const running = await payload.find({
+    const runningPromise = payload.find({
       collection: 'crawl-runs',
       depth: 0,
       limit: 3,
@@ -214,6 +215,22 @@ export async function POST(request: Request) {
         ],
       },
     })
+    const freshAfter = new Date(Date.now() - SHARED_CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    const existingPromise = body.force ? Promise.resolve(null) : payload.find({
+      collection: 'crawl-runs', depth: 0, limit: 1, overrideAccess: false, sort: '-createdAt', user,
+      where: { and: [
+        { owner: { equals: user.id } }, { domain: { equals: target.domain } },
+        { status: { equals: 'completed' } }, { completedAt: { greater_than: freshAfter } },
+      ] },
+    })
+    const sharedPromise = body.force ? Promise.resolve(null) : payload.find({
+      collection: 'crawl-runs', depth: 0, limit: 1, overrideAccess: true, sort: '-completedAt',
+      where: { and: [
+        { domain: { equals: target.domain } }, { status: { equals: 'completed' } },
+        { completedAt: { greater_than: freshAfter } },
+      ] },
+    })
+    const [running, existing, shared] = await Promise.all([runningPromise, existingPromise, sharedPromise])
     const sameDomainRun = (running.docs as unknown as CrawlRunRecord[]).find((run) => run.domain === target.domain)
     if (sameDomainRun) return NextResponse.json({ cached: true, run: serializeRun(sameDomainRun) }, { status: 202 })
     if (running.docs.length >= 2) {
@@ -221,42 +238,11 @@ export async function POST(request: Request) {
     }
 
     if (!body.force) {
-      const freshAfter = new Date(Date.now() - SHARED_CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString()
-      const existing = await payload.find({
-        collection: 'crawl-runs',
-        depth: 0,
-        limit: 1,
-        overrideAccess: false,
-        sort: '-createdAt',
-        user,
-        where: {
-          and: [
-            { owner: { equals: user.id } },
-            { domain: { equals: target.domain } },
-            { status: { equals: 'completed' } },
-            { completedAt: { greater_than: freshAfter } },
-          ],
-        },
-      })
-      if (existing.docs[0]) {
+      if (existing?.docs[0]) {
         return NextResponse.json({ cached: true, run: serializeRun(existing.docs[0] as unknown as CrawlRunRecord) })
       }
 
-      const shared = await payload.find({
-        collection: 'crawl-runs',
-        depth: 0,
-        limit: 1,
-        overrideAccess: true,
-        sort: '-completedAt',
-        where: {
-          and: [
-            { domain: { equals: target.domain } },
-            { status: { equals: 'completed' } },
-            { completedAt: { greater_than: freshAfter } },
-          ],
-        },
-      })
-      if (shared.docs[0]) {
+      if (shared?.docs[0]) {
         const source = shared.docs[0] as unknown as CrawlRunRecord
         const refreshAfter = Date.now() - BACKGROUND_REFRESH_HOURS * 60 * 60 * 1000
         const shouldRefresh = !source.completedAt || new Date(source.completedAt).getTime() < refreshAfter

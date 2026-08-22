@@ -33,9 +33,15 @@ export function AccountMenu({ member }: { member: MemberSummary }) {
     router.refresh()
   })
 
+  const prefetchAccountRoutes = () => {
+    router.prefetch('/account')
+    router.prefetch('/bookmarks')
+    router.prefetch('/atlas')
+  }
+
   return (
     <div className="account-menu" ref={rootRef}>
-      <button className="account-menu__trigger" type="button" aria-label="Open account menu" aria-expanded={open} aria-controls="account-menu-panel" onClick={() => setOpen((value) => !value)}>
+      <button className="account-menu__trigger" type="button" aria-label="Open account menu" aria-expanded={open} aria-controls="account-menu-panel" onPointerEnter={prefetchAccountRoutes} onFocus={prefetchAccountRoutes} onClick={() => { prefetchAccountRoutes(); setOpen((value) => !value) }}>
         <span>{initials}</span>
         <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.2" r="2.7" stroke="currentColor" strokeWidth="1.3" /><path d="M3 14c.4-3 2.1-4.5 5-4.5s4.6 1.5 5 4.5" stroke="currentColor" strokeWidth="1.3" /></svg>
       </button>

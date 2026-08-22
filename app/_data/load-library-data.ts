@@ -1,4 +1,5 @@
 import config from '@payload-config'
+import { unstable_cache } from 'next/cache'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 
@@ -31,6 +32,31 @@ type WebsiteSelection = {
 type FolderSelection = { id: string | number; name: string }
 type BookmarkSelection = { id: string | number; website: RelationshipValue; folder?: RelationshipValue | null }
 
+const loadPublicSites = unstable_cache(async (): Promise<Site[]> => {
+  const payload = await getPayload({ config })
+  const [websiteResult, publicSaveResult] = await Promise.all([
+    payload.find({
+      collection: 'websites', depth: 1, limit: 500, overrideAccess: false,
+      select: { slug: true, name: true, cover: true, coverImage: true, industry: true, styles: true, note: true, url: true, featuredRank: true },
+      sort: '-featuredRank',
+    }),
+    payload.find({ collection: 'bookmarks', depth: 0, limit: 5000, overrideAccess: true, pagination: false, select: { website: true } }),
+  ])
+  const publicSaveCounts = new Map<string, number>()
+  for (const save of publicSaveResult.docs as unknown as Array<{ website: RelationshipValue }>) {
+    const websiteID = relationshipID(save.website)
+    publicSaveCounts.set(websiteID, (publicSaveCounts.get(websiteID) || 0) + 1)
+  }
+  return (websiteResult.docs as unknown as WebsiteSelection[]).map((website) => ({
+    id: String(website.id), slug: website.slug || undefined, name: website.name,
+    coverImage: coverURL(website.cover, website.coverImage),
+    industry: typeof website.industry === 'object' && website.industry && 'name' in website.industry ? website.industry.name || 'Ecommerce' : 'Ecommerce',
+    style: website.styles?.map((style) => typeof style === 'object' && 'name' in style ? style.name || '' : '').filter(Boolean).join(' / ') || 'Unclassified',
+    note: website.note || '', url: website.url, featured: website.featuredRank || 0,
+    saveCount: publicSaveCounts.get(String(website.id)) || 0,
+  }))
+}, ['indizio-public-library-v2'], { revalidate: 300, tags: ['public-library'] })
+
 function relationshipID(value: RelationshipValue): string {
   return String(typeof value === 'object' ? value.id : value)
 }
@@ -54,53 +80,10 @@ export async function loadLibraryData(): Promise<LibraryData> {
   try {
     const payload = await getPayload({ config })
     const requestHeaders = await headers()
-    const [auth, websiteResult, publicSaveResult] = await Promise.all([
+    const [auth, sites] = await Promise.all([
       payload.auth({ headers: requestHeaders }),
-      payload.find({
-        collection: 'websites',
-        depth: 1,
-        limit: 500,
-        overrideAccess: false,
-        select: {
-          slug: true,
-          name: true,
-          cover: true,
-          coverImage: true,
-          industry: true,
-          styles: true,
-          note: true,
-          url: true,
-          featuredRank: true,
-        },
-        sort: '-featuredRank',
-      }),
-      payload.find({
-        collection: 'bookmarks',
-        depth: 0,
-        limit: 5000,
-        overrideAccess: true,
-        select: { website: true },
-      }),
+      loadPublicSites(),
     ])
-
-    const websites = websiteResult.docs as unknown as WebsiteSelection[]
-    const publicSaveCounts = new Map<string, number>()
-    for (const save of publicSaveResult.docs as unknown as Array<{ website: RelationshipValue }>) {
-      const websiteID = relationshipID(save.website)
-      publicSaveCounts.set(websiteID, (publicSaveCounts.get(websiteID) || 0) + 1)
-    }
-    const sites: Site[] = websites.map((website) => ({
-      id: String(website.id),
-      slug: website.slug || undefined,
-      name: website.name,
-      coverImage: coverURL(website.cover, website.coverImage),
-      industry: typeof website.industry === 'object' && website.industry && 'name' in website.industry ? website.industry.name || 'Ecommerce' : 'Ecommerce',
-      style: website.styles?.map((style) => typeof style === 'object' && 'name' in style ? style.name || '' : '').filter(Boolean).join(' / ') || 'Unclassified',
-      note: website.note || '',
-      url: website.url,
-      featured: website.featuredRank || 0,
-      saveCount: publicSaveCounts.get(String(website.id)) || 0,
-    }))
 
     if (auth.user?.collection !== 'members') {
       return { sites: sites.length ? sites : fallbackSites, member: null, collections: [], bookmarks: [] }
@@ -134,6 +117,11 @@ export async function loadLibraryData(): Promise<LibraryData> {
       collectionID: bookmark.folder ? relationshipID(bookmark.folder) : null,
     }))
 
+    const counts = new Map<string, number>()
+    for (const bookmark of bookmarks) {
+      if (bookmark.collectionID) counts.set(bookmark.collectionID, (counts.get(bookmark.collectionID) || 0) + 1)
+    }
+
     return {
       sites: sites.length ? sites : fallbackSites,
       member: {
@@ -144,7 +132,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
       collections: folderDocs.map((folder) => ({
         id: String(folder.id),
         name: folder.name,
-        count: bookmarks.filter((bookmark) => bookmark.collectionID === String(folder.id)).length,
+        count: counts.get(String(folder.id)) || 0,
       })),
       bookmarks,
     }

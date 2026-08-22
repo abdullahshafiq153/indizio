@@ -726,3 +726,28 @@ button:disabled { cursor: wait; opacity: .58; }
   .account-section { padding: 38px 18px; }
   .account-form-actions { align-items: flex-start; flex-direction: column; }
 }
+
+/* Keep page hero spacing consistent at every viewport size. */
+.hero__headline,
+.fieldnotes-hero,
+.article-hero,
+.atlas-hero,
+.account-hero {
+  padding-block: 70px;
+}
+
+.fieldnotes-hero,
+.atlas-hero,
+.account-hero {
+  min-height: auto;
+}
+
+.library--page,
+.bookmarks-page {
+  padding-top: 70px;
+}
+
+.library--page .section-heading,
+.bookmarks-heading {
+  margin-bottom: 70px;
+}

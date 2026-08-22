@@ -45,7 +45,6 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
   const [resultQuery, setResultQuery] = useState('')
   const [suggestions, setSuggestions] = useState<AtlasSuggestion[]>([])
   const [suggestionsOpen, setSuggestionsOpen] = useState(false)
-  const [view, setView] = useState<'list' | 'map'>('list')
   const autoRunRef = useRef(false)
 
   const loadHistory = useCallback(async () => {
@@ -160,8 +159,6 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
     })
   }, [resultQuery, selectedRun?.pages, type])
 
-  const mapGroups = useMemo(() => PAGE_TYPES.slice(1).map((pageType) => ({ type: pageType, pages: filteredPages.filter((page) => page.type === pageType) })).filter((group) => group.pages.length), [filteredPages])
-
   const copyURLs = async () => {
     await navigator.clipboard.writeText(filteredPages.map((page) => page.url).join('\n'))
     setMessage(`${filteredPages.length} URLs copied.`)
@@ -228,20 +225,12 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
                 <label>Type <select value={type} onChange={(event) => setType(event.target.value)}>{PAGE_TYPES.map((option) => <option key={option} value={option}>{option === 'all' ? 'All pages' : option}</option>)}</select></label>
                 <button type="button" onClick={() => void copyURLs()}>Copy URLs</button>
                 <button type="button" onClick={exportCSV}>Export CSV</button>
-                <div className="atlas-view-toggle" role="group" aria-label="Result view"><button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button><button type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}>Map</button></div>
-                <button type="button" onClick={() => { setQuery(selectedRun.startURL); void startCrawl(undefined, true, selectedRun.startURL) }}>Refresh map</button>
+                <button type="button" onClick={() => { setQuery(selectedRun.startURL); void startCrawl(undefined, true, selectedRun.startURL) }}>Refresh URLs</button>
               </div>
               <div className="atlas-results__meta"><span>{filteredPages.length} shown</span><span>Saved {formatDate(selectedRun.completedAt || selectedRun.createdAt)}</span></div>
-              {view === 'list' ? <ol className="atlas-url-list">
+              <ol className="atlas-url-list">
                 {filteredPages.map((page, index) => <li key={page.url}><span>{String(index + 1).padStart(3, '0')}</span><div><strong>{page.title || page.path || '/'}</strong><a href={page.url} target="_blank" rel="noreferrer">{page.url}</a></div><span className={`atlas-url-tag atlas-url-tag--${page.type}`}>{page.type}</span><a href={page.url} target="_blank" rel="noreferrer" aria-label={`Open ${page.url}`}>↗</a></li>)}
-              </ol> : <div className="atlas-map" role="region" aria-label={`Visual URL map for ${selectedRun.brandName}`}>
-                <div className="atlas-map__root"><span>Brand root</span><strong>{selectedRun.domain}</strong><a href={selectedRun.startURL} target="_blank" rel="noreferrer">Open homepage ↗</a></div>
-                <div className="atlas-map__groups">{mapGroups.map((group) => <section className="atlas-map__group" key={group.type}>
-                  <header><span className={`atlas-url-tag atlas-url-tag--${group.type}`}>{group.type}</span><strong>{group.pages.length}</strong></header>
-                  <div>{group.pages.slice(0, 6).map((page) => <a key={page.url} href={page.url} target="_blank" rel="noreferrer"><span>{page.title || page.path || '/'}</span><small>{page.path || '/'}</small></a>)}</div>
-                  {group.pages.length > 6 && <p>+ {group.pages.length - 6} more URLs in this branch</p>}
-                </section>)}</div>
-              </div>}
+              </ol>
             </>
           )}
         </section>

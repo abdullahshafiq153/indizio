@@ -165,6 +165,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
       const result = await moveBookmark(data)
       setMessage(result.message)
       if (result.ok && result.bookmarkID) {
+        window.dispatchEvent(new Event('indizio:viewer-changed'))
         setBookmarks((current) => current.map((bookmark) => bookmark.id === result.bookmarkID
           ? { ...bookmark, collectionID: result.collectionID || null }
           : bookmark))
@@ -187,6 +188,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
     startTransition(async () => {
       const result = await removeBookmark(data)
       setMessage(result.message)
+      if (result.ok) window.dispatchEvent(new Event('indizio:viewer-changed'))
       if (!result.ok) {
         setBookmarks((current) => {
           if (current.some((item) => item.websiteID === bookmark.websiteID)) return current

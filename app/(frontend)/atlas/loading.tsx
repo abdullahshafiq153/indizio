@@ -2,7 +2,7 @@ import { EditorialHeader } from '../../_components/editorial-chrome'
 
 export default function AtlasLoading() {
   return <>
-    <EditorialHeader active="atlas" member={null} bookmarkCount={0} />
+    <EditorialHeader active="atlas" />
     <main className="atlas-page ruled-section" aria-busy="true">
       <header className="atlas-hero"><div><p className="eyebrow">03 / Brand Atlas</p><h1>Every public page.<br />One brand map.</h1></div><div className="atlas-hero__aside"><span className="skeleton-block" style={{ height: 22, width: '92%' }} /><span className="skeleton-block" style={{ height: 22, width: '74%', marginTop: 10 }} /></div></header>
       <section className="atlas-search"><div><p className="eyebrow">Start a map</p><h2>Find a brand by name or URL.</h2></div><div><span className="skeleton-block" style={{ height: 58, width: '100%' }} /></div></section>

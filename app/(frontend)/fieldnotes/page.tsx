@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { EditorialFooter, EditorialHeader } from '../../_components/editorial-chrome'
-import { loadEditorialViewer } from '../../_data/editorial-viewer'
 import { loadFieldnotes } from '../../_data/fieldnotes'
 
 export const revalidate = 300
@@ -25,7 +24,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('en', {
 }).format(new Date(value))
 
 export default async function FieldnotesPage() {
-  const [articles, viewer] = await Promise.all([loadFieldnotes(), loadEditorialViewer()])
+  const articles = await loadFieldnotes()
   const selectedFeatured = articles.filter((article) => article.featured)
   const featured = (selectedFeatured.length ? selectedFeatured : articles).slice(0, 2)
   const featuredIds = new Set(featured.map((article) => article.id))
@@ -34,7 +33,7 @@ export default async function FieldnotesPage() {
   return (
     <>
       <a className="skip-link" href="#fieldnotes">Skip to fieldnotes</a>
-      <EditorialHeader active="fieldnotes" member={viewer.member} bookmarkCount={viewer.bookmarkCount} />
+      <EditorialHeader active="fieldnotes" />
       <main id="fieldnotes" className="fieldnotes-page ruled-section">
         <header className="fieldnotes-hero">
           <div>

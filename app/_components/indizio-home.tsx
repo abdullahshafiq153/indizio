@@ -275,7 +275,9 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       data.set('website', site.id)
       startTransition(async () => {
         const result = await removeBookmark(data)
-        if (!result.ok) {
+        if (result.ok) {
+          window.dispatchEvent(new Event('indizio:viewer-changed'))
+        } else {
           setBookmarks((current) => [...existing, ...current])
           setSaveCounts((current) => new Map(current).set(site.id!, (current.get(site.id!) || 0) + existing.length))
           showBookmarkToast({
@@ -309,6 +311,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     startTransition(async () => {
       const result = await saveBookmark(data)
       if (result.ok && result.bookmarkID) {
+        window.dispatchEvent(new Event('indizio:viewer-changed'))
         setBookmarks((current) => current.map((bookmark) => bookmark.id === optimisticID ? {
           id: result.bookmarkID!,
           websiteID: site.id!,
@@ -342,6 +345,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       const result = authMode === 'signup' ? await signUp(data) : await signIn(data)
       setAuthMessage(result.message)
       if (result.ok) {
+        window.dispatchEvent(new Event('indizio:viewer-changed'))
         form.reset()
         authDialogRef.current?.close()
         if (pendingBookmark?.id) {
@@ -418,6 +422,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       const result = await moveBookmark(data)
       setBookmarkMessage(result.message)
       if (result.ok && result.bookmarkID) {
+        window.dispatchEvent(new Event('indizio:viewer-changed'))
         setBookmarks((current) => current.some((bookmark) => bookmark.id === result.bookmarkID)
           ? current
           : [{ id: result.bookmarkID!, websiteID: websiteID || '', collectionID: result.collectionID || null }, ...current])

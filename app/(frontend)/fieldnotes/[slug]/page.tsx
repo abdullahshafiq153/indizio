@@ -6,7 +6,6 @@ import { notFound } from 'next/navigation'
 
 import { EditorialFooter, EditorialHeader } from '../../../_components/editorial-chrome'
 import { ReadingProgress } from '../../../_components/reading-progress'
-import { loadEditorialViewer } from '../../../_data/editorial-viewer'
 import { fallbackFieldnotes, loadFieldnote } from '../../../_data/fieldnotes'
 
 export const revalidate = 300
@@ -44,13 +43,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function FieldnoteArticlePage({ params }: PageProps) {
   const { slug } = await params
-  const [article, viewer] = await Promise.all([loadFieldnote(slug), loadEditorialViewer()])
+  const article = await loadFieldnote(slug)
   if (!article) notFound()
 
   return (
     <>
       <a className="skip-link" href="#article">Skip to article</a>
-      <EditorialHeader active="fieldnotes" member={viewer.member} bookmarkCount={viewer.bookmarkCount} />
+      <EditorialHeader active="fieldnotes" />
       <ReadingProgress />
       <main id="article" className="article-page ruled-section">
         <header className="article-hero">

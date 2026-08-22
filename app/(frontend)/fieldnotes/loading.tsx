@@ -3,7 +3,7 @@ import { EditorialHeader } from '../../_components/editorial-chrome'
 export default function FieldnotesLoading() {
   return (
     <>
-      <EditorialHeader active="fieldnotes" member={null} bookmarkCount={0} />
+      <EditorialHeader active="fieldnotes" />
       <main className="fieldnotes-page ruled-section" aria-busy="true" aria-label="Loading fieldnotes">
         <header className="fieldnotes-hero">
           <div><p className="eyebrow">03 / CRO Fieldnotes</p><h1>Research for better decisions.</h1></div>

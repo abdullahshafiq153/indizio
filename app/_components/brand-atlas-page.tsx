@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { FormEvent, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { MemberSummary } from '../_data/load-library-data'
+import { useViewer } from './viewer-context'
 
 type AtlasPage = { url: string; path: string; type: string; source: string; title: string | null }
 type AtlasRun = {
@@ -34,7 +34,8 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
 }
 
-export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
+export function BrandAtlasPage() {
+  const { member, loading: viewerLoading } = useViewer()
   const [history, setHistory] = useState<AtlasRun[]>([])
   const [selectedRun, setSelectedRun] = useState<AtlasRun | null>(null)
   const [message, setMessage] = useState('')
@@ -208,7 +209,9 @@ export function BrandAtlasPage({ member }: { member: MemberSummary | null }) {
 
       <section className="atlas-search" aria-labelledby="atlas-search-heading">
         <div><p className="eyebrow">Start a map</p><h2 id="atlas-search-heading">Find a brand by name or URL.</h2></div>
-        {member ? (
+        {viewerLoading ? (
+          <div className="atlas-signed-out" aria-label="Loading your account"><span className="skeleton-block" style={{ width: '100%', height: 58 }} /></div>
+        ) : member ? (
           <form onSubmit={startCrawl} className="atlas-search__form">
             <label htmlFor="atlas-query">Brand name or website</label>
             <div className="atlas-search__input-wrap"><input id="atlas-query" role="combobox" value={query} onChange={(event) => { setQuery(event.target.value); setSuggestionsOpen(true) }} onFocus={() => setSuggestionsOpen(Boolean(suggestions.length))} onBlur={() => window.setTimeout(() => setSuggestionsOpen(false), 120)} placeholder="e.g. Allbirds or https://allbirds.com" autoComplete="off" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded={suggestionsOpen} aria-controls="atlas-suggestions" required /><button type="submit" disabled={loading || query.trim().length < 2}><span>{loading ? 'Opening…' : 'Map this brand'}</span><span aria-hidden="true">→</span></button>{suggestionsOpen && <ul className="atlas-suggestions" id="atlas-suggestions" role="listbox" aria-label="Previously mapped brands">{suggestions.map((suggestion) => <li key={suggestion.domain} role="option" aria-selected="false"><button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { setQuery(suggestion.startURL); setSuggestionsOpen(false); void startCrawl(undefined, false, suggestion.startURL) }}><span><strong>{suggestion.brandName}</strong><small>{suggestion.domain}</small></span><span><small>{suggestion.urlCount} URLs</small><small>Use saved map →</small></span></button></li>)}</ul>}</div>

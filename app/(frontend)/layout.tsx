@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { DM_Mono, Manrope } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { ViewerProvider } from '../_components/viewer-context'
 import '../../styles.css'
 
 const manrope = Manrope({
@@ -48,7 +49,7 @@ export default function FrontendLayout({ children }: Readonly<{ children: React.
   return (
     <html lang="en" className={`${manrope.variable} ${dmMono.variable}`}>
       <body>
-        {children}
+        <ViewerProvider>{children}</ViewerProvider>
         <Analytics />
         <SpeedInsights />
       </body>

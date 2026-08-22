@@ -28,6 +28,7 @@ export function AccountMenu({ member }: { member: MemberSummary }) {
 
   const handleSignOut = () => startTransition(async () => {
     await signOut()
+    window.dispatchEvent(new Event('indizio:viewer-changed'))
     setOpen(false)
     router.push('/')
     router.refresh()

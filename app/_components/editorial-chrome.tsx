@@ -7,6 +7,7 @@ import { FormEvent, useState, useTransition } from 'react'
 import { subscribeNewsletter } from '../actions'
 import type { MemberSummary } from '../_data/load-library-data'
 import { AccountMenu } from './account-menu'
+import { useViewer } from './viewer-context'
 
 type ActiveNav = 'library' | 'fieldnotes' | 'atlas'
 
@@ -24,10 +25,12 @@ const navItems: Array<{ id: ActiveNav; href: string; label: string }> = [
   { id: 'atlas', href: '/atlas', label: 'Brand Atlas' },
 ]
 
-export function EditorialHeader({ active, member, bookmarkCount }: { active?: ActiveNav; member: MemberSummary | null; bookmarkCount: number }) {
+export function EditorialHeader({ active, member: memberOverride, bookmarkCount: bookmarkCountOverride }: { active?: ActiveNav; member?: MemberSummary | null; bookmarkCount?: number }) {
   const router = useRouter()
+  const viewer = useViewer()
+  const member = memberOverride === undefined ? viewer.member : memberOverride
+  const bookmarkCount = bookmarkCountOverride === undefined ? viewer.bookmarkCount : bookmarkCountOverride
   const [menuOpen, setMenuOpen] = useState(false)
-  const [, startTransition] = useTransition()
 
   const handleAccount = () => {
     if (!member) {

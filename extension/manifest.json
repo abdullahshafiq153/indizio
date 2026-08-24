@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Indizio — Ecommerce Research",
+  "version": "0.1.0",
+  "description": "Save and organize ecommerce research without leaving the page.",
+  "permissions": ["activeTab", "contextMenus", "scripting", "storage", "tabs"],
+  "host_permissions": ["https://www.indizio.space/*", "https://indizio.space/*", "http://localhost:3000/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Save to Indizio", "default_popup": "popup.html" },
+  "commands": {
+    "save-current-page": {
+      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "description": "Open Indizio to save the current page"
+    }
+  }
+}

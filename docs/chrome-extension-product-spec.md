@@ -1,7 +1,7 @@
 # Indizio Chrome Extension — Living Product Specification
 
-**Status:** Planned  
-**Last updated:** August 22, 2026  
+**Status:** V1 development build implemented
+**Last updated:** August 24, 2026
 **Document purpose:** Preserve the agreed product decisions for the Indizio Chrome extension and its supporting website functionality. Update this document whenever the extension scope changes.
 
 ## 1. Product vision
@@ -402,7 +402,7 @@ The homepage includes a planned Chrome extension section and waitlist CTA. Repla
 Resolve these before implementation begins:
 
 1. Whether public counts represent unique savers or collection placements.
-2. Whether the first version uses a popup, side panel, or both.
+2. **Resolved:** V1 provides a compact popup with Save and Library modes plus a full-tab library manager. The selected popup mode and list/grid preference persist.
 3. Whether users save an exact page, its parent website, or both by default.
 4. Whether one page can belong to multiple collections in the first release.
 5. Which saved-page query parameters must be preserved.
@@ -420,3 +420,19 @@ Resolve these before implementation begins:
 - Automated editorial articles
 - Chrome browsing-history collection
 - Support for browsers other than Chromium-based browsers
+
+## 21. August 24 V1 implementation
+
+The repository now includes a load-unpacked Manifest V3 extension in `/extension` with:
+
+- Compact active-page saver
+- Compact recent-saves library mode
+- Full-tab Raindrop-style library manager
+- Collection navigation and creation
+- Search and persistent list/grid views
+- Notes, collection editing, unsaving, and direct page opening
+- Dedicated `/api/extension` integration with the existing Payload account, bookmark, collection, and website records
+- Exact canonical page metadata on bookmarks
+- Private draft website creation for unknown domains
+
+The V1 authentication bridge reuses the member's active Indizio browser session. A server-issued extension token flow remains a release-hardening task if Chrome Web Store testing shows third-party-cookie restrictions interfering with session reuse.

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Indizio</title><link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="topbar"><strong>INDIZIO<span>●</span></strong><button id="openLibrary" title="Open full library">↗</button></header>
+  <nav class="mode-switch" aria-label="Extension view"><button data-mode="save">SAVE PAGE</button><button data-mode="library">LIBRARY</button></nav>
+
+  <main id="loading" class="state"><i></i><p>Reading the signal…</p></main>
+  <main id="signedOut" class="state" hidden><p class="eyebrow">INDIZIO ACCOUNT</p><h1>Your research,<br>in one place.</h1><p>Sign in on Indizio, then return here to save this page.</p><button id="signIn" class="primary">SIGN IN / REGISTER <span>↗</span></button><button id="retry" class="text-button">I’ve signed in — retry</button></main>
+
+  <main id="saveView" hidden>
+    <section class="page-card"><img id="favicon" alt=""><div><p id="domain"></p><h1 id="title"></h1><a id="pageUrl" target="_blank"></a></div></section>
+    <label>NOTE <textarea id="note" rows="3" placeholder="Why is this worth keeping?"></textarea></label>
+    <label>COLLECTION <select id="collection"><option value="">All saves</option></select></label>
+    <div class="new-collection"><input id="newCollection" placeholder="New collection name"><button id="createCollection" title="Create collection">+</button></div>
+    <p id="saveMessage" class="message" aria-live="polite"></p>
+    <button id="saveButton" class="primary">SAVE TO INDIZIO <span>+</span></button>
+  </main>
+
+  <main id="libraryView" hidden>
+    <div class="library-heading"><div><p class="eyebrow">YOUR RESEARCH</p><h1>Saved pages.</h1></div><button id="searchToggle" aria-label="Search">⌕</button></div>
+    <input id="quickSearch" class="search" type="search" placeholder="Search saves" hidden>
+    <div id="collectionChips" class="chips"></div>
+    <div id="recentBookmarks" class="recent"></div>
+    <button id="viewAll" class="primary secondary">OPEN COMPLETE LIBRARY <span>↗</span></button>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

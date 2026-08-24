@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Indizio Library</title><link rel="stylesheet" href="library.css"></head>
+<body>
+  <aside>
+    <header><strong>INDIZIO<span>●</span></strong><button id="newFolder" title="New collection">+</button></header>
+    <section id="identity"></section>
+    <nav id="collections"></nav>
+    <footer><a href="https://www.indizio.space/bookmarks" target="_blank">OPEN ON INDIZIO ↗</a></footer>
+  </aside>
+  <main>
+    <header class="toolbar">
+      <label><span>⌕</span><input id="search" type="search" placeholder="Search saved pages"></label>
+      <div><button id="listView" class="active" title="List view">☷</button><button id="gridView" title="Grid view">▦</button><button id="refresh" title="Refresh">↻</button></div>
+    </header>
+    <section class="heading"><div><p>RESEARCH LIBRARY</p><h1 id="heading">All saves.</h1></div><span id="total"></span></section>
+    <section id="results" class="results list"></section>
+  </main>
+  <dialog id="editor">
+    <form method="dialog"><button class="close">×</button></form>
+    <p>EDIT SAVED PAGE</p><h2 id="editTitle"></h2>
+    <label>NOTE<textarea id="editNote" rows="5"></textarea></label>
+    <label>COLLECTION<select id="editCollection"><option value="">All saves</option></select></label>
+    <p id="editMessage"></p><button id="saveEdit" class="primary">UPDATE SAVE <span>→</span></button>
+  </dialog>
+  <dialog id="folderDialog">
+    <form method="dialog"><button class="close">×</button></form>
+    <p>NEW COLLECTION</p><h2>Start a new trail.</h2><label>NAME<input id="folderName" placeholder="e.g. High-converting PDPs"></label><p id="folderMessage"></p><button id="createFolder" class="primary">CREATE COLLECTION <span>+</span></button>
+  </dialog>
+  <script type="module" src="library.js"></script>
+</body>
+</html>

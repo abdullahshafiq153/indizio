@@ -27,16 +27,23 @@ export const Bookmarks: CollectionConfig = {
         if (String(ownerID) !== String(req.user.id)) throw new Error('You can only save into your own collections.')
       }
 
-      return { ...data, owner: req.user.id }
+      const pageURL = typeof data?.pageURL === 'string' ? data.pageURL : ''
+      return { ...data, owner: req.user.id, pageKey: pageURL || `website:${String(data?.website || '')}` }
     }],
   },
   indexes: [
-    { fields: ['owner', 'folder', 'website'], unique: true },
+    { fields: ['owner', 'folder', 'pageKey'], unique: true },
   ],
   fields: [
     { name: 'owner', type: 'relationship', relationTo: 'members', required: true, index: true },
     { name: 'folder', type: 'relationship', relationTo: 'bookmark-collections', index: true },
     { name: 'website', type: 'relationship', relationTo: 'websites', required: true, index: true },
+    { name: 'pageURL', type: 'text', index: true },
+    { name: 'pageKey', type: 'text', index: true, admin: { hidden: true } },
+    { name: 'pageTitle', type: 'text' },
+    { name: 'pageDescription', type: 'textarea' },
+    { name: 'faviconURL', type: 'text' },
+    { name: 'source', type: 'select', defaultValue: 'website', options: ['website', 'extension'] },
     { name: 'note', type: 'textarea' },
     { name: 'position', type: 'number', defaultValue: 0 },
   ],

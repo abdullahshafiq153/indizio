@@ -7,7 +7,15 @@ import { sites as fallbackSites, type Site } from './sites'
 
 export type MemberSummary = { id: string; email: string; name: string }
 export type BookmarkCollectionSummary = { id: string; name: string; count: number }
-export type SavedBookmarkSummary = { id: string; websiteID: string; collectionID: string | null }
+export type SavedBookmarkSummary = {
+  id: string
+  websiteID: string
+  collectionID: string | null
+  pageURL?: string
+  pageTitle?: string
+  pageDescription?: string
+  faviconURL?: string
+}
 
 export type LibraryData = {
   sites: Site[]
@@ -30,7 +38,25 @@ type WebsiteSelection = {
   featuredRank?: number | null
 }
 type FolderSelection = { id: string | number; name: string }
-type BookmarkSelection = { id: string | number; website: RelationshipValue; folder?: RelationshipValue | null }
+type BookmarkSelection = {
+  id: string | number
+  website: RelationshipValue
+  folder?: RelationshipValue | null
+  pageURL?: string | null
+  pageTitle?: string | null
+  pageDescription?: string | null
+  faviconURL?: string | null
+}
+
+function websiteToSite(website: WebsiteSelection, saveCount = 0): Site {
+  return {
+    id: String(website.id), slug: website.slug || undefined, name: website.name,
+    coverImage: coverURL(website.cover, website.coverImage),
+    industry: typeof website.industry === 'object' && website.industry && 'name' in website.industry ? website.industry.name || 'Ecommerce' : 'Ecommerce',
+    style: website.styles?.map((style) => typeof style === 'object' && 'name' in style ? style.name || '' : '').filter(Boolean).join(' / ') || 'Unclassified',
+    note: website.note || '', url: website.url, featured: website.featuredRank || 0, saveCount,
+  }
+}
 
 const loadPublicSites = unstable_cache(async (): Promise<Site[]> => {
   const payload = await getPayload({ config })
@@ -47,14 +73,7 @@ const loadPublicSites = unstable_cache(async (): Promise<Site[]> => {
     const websiteID = relationshipID(save.website)
     publicSaveCounts.set(websiteID, (publicSaveCounts.get(websiteID) || 0) + 1)
   }
-  return (websiteResult.docs as unknown as WebsiteSelection[]).map((website) => ({
-    id: String(website.id), slug: website.slug || undefined, name: website.name,
-    coverImage: coverURL(website.cover, website.coverImage),
-    industry: typeof website.industry === 'object' && website.industry && 'name' in website.industry ? website.industry.name || 'Ecommerce' : 'Ecommerce',
-    style: website.styles?.map((style) => typeof style === 'object' && 'name' in style ? style.name || '' : '').filter(Boolean).join(' / ') || 'Unclassified',
-    note: website.note || '', url: website.url, featured: website.featuredRank || 0,
-    saveCount: publicSaveCounts.get(String(website.id)) || 0,
-  }))
+  return (websiteResult.docs as unknown as WebsiteSelection[]).map((website) => websiteToSite(website, publicSaveCounts.get(String(website.id)) || 0))
 }, ['indizio-public-library-v2'], { revalidate: 300, tags: ['public-library'] })
 
 function relationshipID(value: RelationshipValue): string {
@@ -104,7 +123,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
         depth: 0,
         limit: 500,
         overrideAccess: false,
-        select: { website: true, folder: true },
+        select: { website: true, folder: true, pageURL: true, pageTitle: true, pageDescription: true, faviconURL: true },
         user: auth.user,
       }),
     ])
@@ -115,7 +134,21 @@ export async function loadLibraryData(): Promise<LibraryData> {
       id: String(bookmark.id),
       websiteID: relationshipID(bookmark.website),
       collectionID: bookmark.folder ? relationshipID(bookmark.folder) : null,
+      pageURL: bookmark.pageURL || undefined,
+      pageTitle: bookmark.pageTitle || undefined,
+      pageDescription: bookmark.pageDescription || undefined,
+      faviconURL: bookmark.faviconURL || undefined,
     }))
+
+    const publicWebsiteIDs = new Set(sites.map((site) => site.id).filter(Boolean))
+    const privateWebsiteIDs = [...new Set(bookmarks.map((bookmark) => bookmark.websiteID).filter((id) => !publicWebsiteIDs.has(id)))]
+    const privateWebsiteResult = privateWebsiteIDs.length ? await payload.find({
+      collection: 'websites', depth: 1, limit: privateWebsiteIDs.length, overrideAccess: true,
+      select: { slug: true, name: true, cover: true, coverImage: true, industry: true, styles: true, note: true, url: true, featuredRank: true },
+      where: { id: { in: privateWebsiteIDs } },
+    }) : { docs: [] }
+    const privateSites = (privateWebsiteResult.docs as unknown as WebsiteSelection[]).map((website) => websiteToSite(website))
+    const availableSites = [...sites, ...privateSites]
 
     const counts = new Map<string, number>()
     for (const bookmark of bookmarks) {
@@ -123,7 +156,7 @@ export async function loadLibraryData(): Promise<LibraryData> {
     }
 
     return {
-      sites: sites.length ? sites : fallbackSites,
+      sites: availableSites.length ? availableSites : fallbackSites,
       member: {
         id: String(auth.user.id),
         email: auth.user.email || '',

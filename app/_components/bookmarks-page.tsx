@@ -287,19 +287,21 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
                   {visibleBookmarks.map((bookmark) => {
                     const site = siteByID.get(bookmark.websiteID)
                     if (!site) return null
+                    const pageName = bookmark.pageTitle || site.name
+                    const pageURL = bookmark.pageURL || site.url
                     return (
                       <article className="site-card" key={bookmark.id}>
                         <div className="card-visual">
-                          <a className="card-open" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name}`}>
+                          <a className="card-open" href={pageURL} target="_blank" rel="noreferrer" aria-label={`Visit ${pageName}`}>
                             {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 360px" quality={70} />}
-                            {!site.coverImage && <span className="card-mark">{site.name}</span>}
+                            {!site.coverImage && <span className="card-mark">{pageName}</span>}
                           </a>
                         </div>
                         <div className="card-meta">
-                          <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
-                            <Link className="card-action" href={`/atlas?url=${encodeURIComponent(site.url)}`} aria-label={`Map ${site.name} in Brand Atlas`} title="Map in Brand Atlas"><AtlasIcon /></Link>
-                            <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name}`}><ExternalIcon /></a>
-                            <button className="card-action card-save-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${site.name} from your saves`} title="Remove save"><BookmarkIcon />{(site.saveCount || 0) >= 5 && <span>{site.saveCount}</span>}</button>
+                          <div className="card-title-row"><h3>{pageName}</h3><div className="card-actions">
+                            <Link className="card-action" href={`/atlas?url=${encodeURIComponent(pageURL)}`} aria-label={`Map ${pageName} in Brand Atlas`} title="Map in Brand Atlas"><AtlasIcon /></Link>
+                            <a className="card-action" href={pageURL} target="_blank" rel="noreferrer" aria-label={`Visit ${pageName}`}><ExternalIcon /></a>
+                            <button className="card-action card-save-action" type="button" onClick={() => handleRemoveBookmark(bookmark)} aria-label={`Remove ${pageName} from your saves`} title="Remove save"><BookmarkIcon />{(site.saveCount || 0) >= 5 && <span>{site.saveCount}</span>}</button>
                           </div></div>
                           <div className="bookmark-card-detail"><span>{collectionName(bookmark.collectionID)}</span><button type="button" onClick={() => openCollectionDialog(bookmark.id)}>Edit</button></div>
                         </div>

@@ -1,4 +1,4 @@
-import { activePage, api, hostname, INDIZIO_ORIGIN } from './api.js'
+import { activePage, api, connectAccount, hostname, INDIZIO_ORIGIN } from './api.js'
 
 let data = null
 let page = null
@@ -87,7 +87,12 @@ $('createCollection').onclick = async () => {
 }
 $('openLibrary').onclick = $('viewAll').onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('library.html') })
 $('signIn').onclick = () => chrome.tabs.create({ url: INDIZIO_ORIGIN })
-$('retry').onclick = boot
+$('retry').onclick = async () => {
+  $('retry').disabled = true
+  const copy = $('signedOut').querySelector('p:not(.eyebrow)')
+  copy.textContent = 'Connecting securely…'
+  try { await connectAccount(); await boot() } catch (error) { copy.textContent = error.message } finally { $('retry').disabled = false }
+}
 $('searchToggle').onclick = () => { $('quickSearch').hidden = !$('quickSearch').hidden; if (!$('quickSearch').hidden) $('quickSearch').focus() }
 $('quickSearch').oninput = (event) => renderLibrary(event.target.value)
 document.querySelectorAll('[data-mode]').forEach((button) => button.onclick = () => setMode(button.dataset.mode))

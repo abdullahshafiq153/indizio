@@ -435,4 +435,4 @@ The repository now includes a load-unpacked Manifest V3 extension in `/extension
 - Exact canonical page metadata on bookmarks
 - Private draft website creation for unknown domains
 
-The V1 authentication bridge reuses the member's active Indizio browser session. A server-issued extension token flow remains a release-hardening task if Chrome Web Store testing shows third-party-cookie restrictions interfering with session reuse.
+The V1 authentication bridge uses Chrome's identity flow. Indizio validates the member in a first-party authorization request, creates a hashed and revocable 90-day extension session, and returns the raw token only through Chrome's protected `chromiumapp.org` redirect. Extension API calls authenticate with that bearer token and do not rely on third-party website cookies.

@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Indizio — Ecommerce Research",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvq5nt4eeaedIseQmatjz6LqpvNKydHipG55/kAm4eT0Kd9tojgrQ2wr8bjYvgi5QVEYKGbXJCkSPrBIRTvGVE8cT+XB6bNADB125XxmD1gN8Sx3cwfVGjzjKK+pFAVYCG3BOg3cwv4lgIZ4wQrIbFGJdCt0Looyfrl/kG64FSSQ8YJnet1p25XcQorQo9aP1TiytLkB6Q1oJowy1OcYZHGKKfqf2CZnPbAToMENIpb/n3NLzDFLojH9i9IdfQ36YJUw1wt98PQEHklp0mlmKnf0dWU1fQKIrP9fBHkivycMqJKTGkoVi3Y3MkSoodXbQa6MFaSaJQj1sIDXhdJo80QIDAQAB",
   "version": "0.1.0",
   "description": "Save and organize ecommerce research without leaving the page.",
-  "permissions": ["activeTab", "contextMenus", "scripting", "storage", "tabs"],
+  "permissions": ["activeTab", "contextMenus", "identity", "scripting", "storage", "tabs"],
   "host_permissions": ["https://www.indizio.space/*", "https://indizio.space/*", "http://localhost:3000/*"],
   "background": { "service_worker": "background.js" },
   "action": { "default_title": "Save to Indizio", "default_popup": "popup.html" },

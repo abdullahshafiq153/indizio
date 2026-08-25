@@ -1,4 +1,5 @@
 import config from '@payload-config'
+import { createHash } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
@@ -23,7 +24,7 @@ function extensionHeaders(request: Request) {
   const origin = request.headers.get('origin') || ''
   return {
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Origin': origin.startsWith('chrome-extension://') ? origin : 'https://www.indizio.space',
     'Cache-Control': 'private, no-store',
@@ -47,6 +48,23 @@ function normalizePageURL(input: string) {
 
 async function session(request: Request) {
   const payload = await getPayload({ config })
+  const bearer = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
+  if (bearer) {
+    const tokenHash = createHash('sha256').update(bearer).digest('hex')
+    const sessions = await payload.find({
+      collection: 'extension-sessions', depth: 0, limit: 1, overrideAccess: true,
+      where: { and: [{ tokenHash: { equals: tokenHash } }, { revoked: { not_equals: true } }, { expiresAt: { greater_than: new Date().toISOString() } }] },
+    })
+    const extensionSession = sessions.docs[0]
+    if (extensionSession) {
+      const memberID = relationID(extensionSession.owner)
+      if (memberID) {
+        const member = await payload.findByID({ collection: 'members', id: memberID, depth: 0, overrideAccess: true })
+        void payload.update({ collection: 'extension-sessions', id: extensionSession.id, overrideAccess: true, data: { lastUsedAt: new Date().toISOString() } })
+        return { payload, user: { ...member, collection: 'members' as const } }
+      }
+    }
+  }
   const auth = await payload.auth({ headers: new Headers(request.headers) })
   return { payload, user: auth.user?.collection === 'members' ? auth.user : null }
 }

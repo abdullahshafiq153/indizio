@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: 'https://indizio.space/library', lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
     { url: 'https://indizio.space/fieldnotes', lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
     { url: 'https://indizio.space/atlas', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: 'https://indizio.space/extension', lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     ...fieldnotes.map((article) => ({
       url: `https://indizio.space/fieldnotes/${article.slug}`,
       lastModified: new Date(article.publishedAt),

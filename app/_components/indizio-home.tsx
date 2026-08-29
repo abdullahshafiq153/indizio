@@ -119,11 +119,26 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [sort, setSort] = useState<SortMode>('featured')
   const [gridColumns, setGridColumns] = useState<GridColumns>(3)
   const [visible, setVisible] = useState(initialVisible)
+  const [activeJourney, setActiveJourney] = useState('library')
   const authDialogRef = useRef<HTMLDialogElement>(null)
   const bookmarkDialogRef = useRef<HTMLDialogElement>(null)
   const infiniteScrollRef = useRef<HTMLDivElement>(null)
   const siteDialogRef = useRef<HTMLDialogElement>(null)
   const toastDismissTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (isLibraryPage) return
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-journey]'))
+    if (!panels.length) return
+    const observer = new IntersectionObserver((entries) => {
+      const visibleEntry = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+      if (visibleEntry) setActiveJourney((visibleEntry.target as HTMLElement).dataset.journey || 'library')
+    }, { rootMargin: '-18% 0px -52% 0px', threshold: [0.15, 0.35, 0.6] })
+    panels.forEach((panel) => observer.observe(panel))
+    return () => observer.disconnect()
+  }, [isLibraryPage])
 
   const authenticated = Boolean(initialMember)
   const savedWebsiteIDs = useMemo(
@@ -496,6 +511,11 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               </Link>
             </div>
           </div>
+          <div className="hero-paths hero-paths--hero" aria-label="Choose your path through INDIZIO">
+            <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Discover</span><span className="hero-path__copy"><strong>Website library</strong><span>Find remarkable ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
+            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">02 / Understand</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Turn storefront observations into research, teardowns, and evidence-backed decisions.</span></span><span className="hero-path__cta">Read fieldnotes <i aria-hidden="true">↗</i></span></Link>
+            <Link className="hero-path hero-path--atlas" href="/atlas"><span className="hero-path__meta">03 / Map</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Reveal the products, collections, content, policies, and conversion paths across a brand.</span></span><span className="hero-path__cta">Map a brand <i aria-hidden="true">↗</i></span></Link>
+          </div>
         </section>}
 
         <section className={`library ruled-section ${isLibraryPage ? 'library--page' : 'library--home'}`} id="library" aria-busy={loading}>
@@ -601,15 +621,28 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
         </section>
 
-        {!isLibraryPage && <><section className="explore-section ruled-section" id="industries" aria-labelledby="explore-heading">
-          <div className="explore-section__heading">
-            <div><p className="eyebrow">Explore INDIZIO</p><h2 id="explore-heading">Three paths through modern commerce.</h2></div>
-            <p>Move from storefront inspiration to original research and complete brand maps.</p>
-          </div>
-          <div className="hero-paths hero-paths--explore" aria-label="Explore INDIZIO">
-            <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Live now</span><span className="hero-path__copy"><strong>Website library</strong><span>Curated ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
-            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">02 / Field research</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Brand teardowns, industry blueprints, and evidence-backed observations.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
-            <Link className="hero-path hero-path--atlas" href="/atlas"><span className="hero-path__meta">03 / Live now</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Map every useful page across an ecommerce domain—from products and collections to policies and conversion flows.</span></span><span className="hero-path__cta">Map a brand <i aria-hidden="true">↗</i></span></Link>
+        {!isLibraryPage && <><section className="journey-showcase ruled-section" id="industries" aria-labelledby="journey-heading">
+          <header className="journey-showcase__heading"><p className="eyebrow">How INDIZIO works</p><h2 id="journey-heading">From discovery<br />to useful evidence.</h2></header>
+          <div className="journey-showcase__layout">
+            <nav className="journey-showcase__nav" aria-label="INDIZIO journeys">
+              <a className={activeJourney === 'library' ? 'active' : ''} href="#journey-library" aria-current={activeJourney === 'library' ? 'step' : undefined}><span>01</span>Discover websites</a>
+              <a className={activeJourney === 'fieldnotes' ? 'active' : ''} href="#journey-fieldnotes" aria-current={activeJourney === 'fieldnotes' ? 'step' : undefined}><span>02</span>Study the evidence</a>
+              <a className={activeJourney === 'atlas' ? 'active' : ''} href="#journey-atlas" aria-current={activeJourney === 'atlas' ? 'step' : undefined}><span>03</span>Map every page</a>
+            </nav>
+            <div className="journey-showcase__panels">
+              <article className="journey-panel" id="journey-library" data-journey="library">
+                <div className="journey-panel__copy"><p className="eyebrow">01 / Website library</p><h3>Discover storefronts worth studying.</h3><p>Search a curated index of ecommerce brands, filter by industry, and save the strongest references into your own collections.</p><Link className="text-button" href="/library">Explore the library ↗</Link></div>
+                <div className="journey-visual journey-visual--library" aria-hidden="true"><div className="journey-search">Search the index <span>⌕</span></div><div className="journey-card-row"><span>Apparel</span><span>Beauty</span><span>Wellness</span></div><div className="journey-card-row journey-card-row--images"><i /><i /><i /></div></div>
+              </article>
+              <article className="journey-panel" id="journey-fieldnotes" data-journey="fieldnotes">
+                <div className="journey-panel__copy"><p className="eyebrow">02 / CRO fieldnotes</p><h3>Understand why the details work.</h3><p>Move beyond visual inspiration with original brand research, conversion observations, and practical ideas you can test.</p><Link className="text-button" href="/fieldnotes">Read the fieldnotes ↗</Link></div>
+                <div className="journey-visual journey-visual--notes" aria-hidden="true"><span className="journey-note-tag">Fieldnote / Conversion</span><strong>The clues behind a higher-converting product page.</strong><p>Evidence, annotations, and patterns recorded from the storefront.</p><div><span>Trust</span><span>Merchandising</span><span>UX</span></div></div>
+              </article>
+              <article className="journey-panel" id="journey-atlas" data-journey="atlas">
+                <div className="journey-panel__copy"><p className="eyebrow">03 / Brand Atlas</p><h3>See the whole brand, not one homepage.</h3><p>Enter a domain and uncover its public products, collections, articles, policies, landing pages, and conversion flows in one reusable map.</p><Link className="text-button" href="/atlas">Open Brand Atlas ↗</Link></div>
+                <div className="journey-visual journey-visual--atlas" aria-hidden="true"><div className="atlas-node atlas-node--root">Brand.com</div><span className="atlas-line" /><div className="atlas-node-grid"><span>Products</span><span>Collections</span><span>Journal</span><span>Policies</span></div></div>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -619,12 +652,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
         <section className="extension-section ruled-section" aria-labelledby="extension-heading">
           <div className="extension-section__copy">
-            <p className="eyebrow">Indizio for Chrome / Coming soon</p>
-            <h2 id="extension-heading">Keep the clue.<br />Without leaving the page.</h2>
-            <p>Save any ecommerce website to Indizio while you browse, organize it into a research collection, and return to everything from one workspace.</p>
-            <a className="line-button" href="#newsletter"><span>Join the extension waitlist</span><span className="line-button__icon" aria-hidden="true">↗</span></a>
+            <p className="eyebrow">Indizio for Chrome / Available now</p>
+            <h2 id="extension-heading">Your research library,<br />wherever you browse.</h2>
+            <p>Capture any website or exact page without breaking your flow. Add a note, choose a collection, and keep private discoveries alongside the public Indizio library—ready to revisit from the extension or your account.</p>
+            <ul className="extension-section__features"><li>Save the exact page, not only the domain</li><li>Organize discoveries into research collections</li><li>Open your complete Indizio library from any tab</li></ul>
+            <div className="extension-section__actions"><Link className="line-button line-button--dark" href="/extension"><span>Explore the extension</span><span className="line-button__icon" aria-hidden="true">↗</span></Link><a className="text-button" href="/downloads/indizio-extension-v0.1.0.zip" download>Download extension</a></div>
           </div>
-          <div className="extension-preview" aria-label="Preview of the planned Indizio Chrome extension">
+          <div className="extension-preview" aria-label="Preview of the Indizio Chrome extension">
             <div className="extension-preview__bar"><span /><span>indizio.space</span><span>•••</span></div>
             <div className="extension-preview__body">
               <div className="extension-preview__brand"><span>INDIZIO</span><span>●</span></div>
@@ -650,7 +684,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
       <footer className="site-footer">
         {isLibraryPage && <section className="footer-newsletter" id="newsletter"><div><p className="footer-label">Indizio weekly</p><p className="footer-newsletter__headline">Seven signals, every Thursday.</p></div><div className="footer-newsletter__signup"><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="footer-email">Email address</label><input id="footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
-        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
+        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/extension">Chrome extension</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
       </footer>
 
       {bookmarkToast && (

@@ -95,7 +95,7 @@ export function EditorialFooter() {
       </section>
       <div className="footer-meta">
         <div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div>
-        <div><p className="footer-label">Explore</p><Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link></div>
+        <div><p className="footer-label">Explore</p><Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/extension">Chrome extension</Link></div>
         <div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div>
         <div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div>
       </div>

@@ -754,8 +754,12 @@ button:disabled { cursor: wait; opacity: .58; }
 
 /* Homepage journeys and extension launch */
 .hero-paths--hero { grid-template-columns: repeat(3, minmax(0, 1fr)); min-height: 240px; }
+.hero:has(.hero-paths--hero) { border-bottom: 1px solid var(--ink); }
 .hero-paths--hero .hero-path { padding: 24px 26px; }
 .hero-paths--hero .hero-path:nth-child(3) { background-image: linear-gradient(rgba(0,0,0,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.045) 1px, transparent 1px); background-size: 24px 24px; }
+.library--home .section-heading--home { margin: 0 0 54px; padding: 42px 0 0; }
+.library--home .section-heading--home h2 { max-width: 820px; font-size: clamp(44px, 5.5vw, 78px); }
+.library--home .section-heading--home > p { max-width: 420px; }
 
 .journey-showcase { background: var(--paper); }
 .journey-showcase__heading { padding: clamp(76px, 8vw, 120px) 44px clamp(60px, 7vw, 96px); display: grid; grid-template-columns: minmax(0, .65fr) minmax(0, 1.35fr); align-items: start; gap: 70px; }
@@ -837,6 +841,8 @@ button:disabled { cursor: wait; opacity: .58; }
 
 @media (max-width: 900px) {
   .hero-paths--hero { grid-template-columns: repeat(3, minmax(280px, 1fr)); overflow-x: auto; }
+  .library--home .section-heading--home { grid-template-columns: 1fr; gap: 24px; }
+  .library--home .section-heading--home > p { margin-left: 0; }
   .journey-showcase__heading { grid-template-columns: 1fr; padding-inline: 24px; gap: 24px; }
   .journey-showcase__layout { grid-template-columns: 1fr; }
   .journey-showcase__nav { z-index: 2; top: 62px; min-height: auto; padding: 0 24px; border-right: 0; border-bottom: 1px solid var(--rule); background: rgba(247,247,247,.96); flex-direction: row; overflow-x: auto; }
@@ -857,6 +863,7 @@ button:disabled { cursor: wait; opacity: .58; }
 @media (max-width: 560px) {
   .hero-paths--hero { grid-template-columns: repeat(3, minmax(84vw, 1fr)); min-height: 225px; }
   .hero-paths--hero .hero-path { min-height: 225px; padding: 20px; }
+  .library--home .section-heading--home { padding-top: 30px; margin-bottom: 40px; }
   .journey-showcase__heading { padding: 64px 18px 48px; }
   .journey-showcase__nav { top: 58px; padding-inline: 6px; }
   .journey-panel__copy { padding: 48px 18px; }

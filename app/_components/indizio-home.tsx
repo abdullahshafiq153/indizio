@@ -523,6 +523,10 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             <div><p className="eyebrow">The complete index / 001</p><h2>Websites worth studying.</h2></div>
             <p>Browse the complete, continuously growing index of storefronts selected for the decisions behind their design.</p>
           </div>}
+          {!isLibraryPage && <div className="section-heading section-heading--home">
+            <div><p className="eyebrow">The website library</p><h2>Websites worth studying.</h2></div>
+            <p>Browse storefronts selected for the decisions behind their design—not simply how the homepage looks.</p>
+          </div>}
 
           <div className="library-tools">
             <label className="search-field">

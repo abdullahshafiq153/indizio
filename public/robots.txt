@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://indizio.space/sitemap.xml
+Sitemap: https://indizio.space/brands/sitemap.xml
+Sitemap: https://indizio.space/industries/sitemap.xml

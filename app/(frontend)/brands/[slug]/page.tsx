@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const brand = await loadPublicBrand(slug)
   if (!brand) return { title: 'Brand not found', robots: { index: false, follow: false } }
 
-  const description = truncateSEOText(brand.note || `Explore the ${brand.name} ecommerce website, its industry, product categories, and storefront details in the INDIZIO library.`, 160)
+  const description = truncateSEOText(brand.note || `Explore the ${brand.name} ecommerce website, its industry, product categories, and storefront details in the INDIZIO library.`, 150)
   const pageTitle = truncateSEOText(`${brand.name} Website & Ecommerce Design`, 50)
   const indexable = isIndexableBrand(brand)
 

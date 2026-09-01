@@ -7,21 +7,21 @@ const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-
 
 export async function script(config: SanitizedConfig) {
   const payload = await getPayload({ config })
-  const industryIDs = new Map<string, string | number>()
-  const styleIDs = new Map<string, string | number>()
+  const industryIDs = new Map<string, string>()
+  const styleIDs = new Map<string, string>()
 
   for (const name of [...new Set(sites.map((site) => site.industry))]) {
     const slug = slugify(name)
     const existing = await payload.find({ collection: 'industries', where: { slug: { equals: slug } }, limit: 1 })
     const document = existing.docs[0] || await payload.create({ collection: 'industries', data: { name, slug } })
-    industryIDs.set(name, document.id)
+    industryIDs.set(name, String(document.id))
   }
 
   for (const name of [...new Set(sites.map((site) => site.style))]) {
     const slug = slugify(name)
     const existing = await payload.find({ collection: 'styles', where: { slug: { equals: slug } }, limit: 1 })
     const document = existing.docs[0] || await payload.create({ collection: 'styles', data: { name, slug } })
-    styleIDs.set(name, document.id)
+    styleIDs.set(name, String(document.id))
   }
 
   for (const site of sites) {

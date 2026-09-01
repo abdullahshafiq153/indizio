@@ -7,11 +7,11 @@ export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'Ecommerce Website Library',
-  description: 'Explore a continuously growing index of ecommerce websites selected for the design decisions worth studying.',
+  description: 'Find relevant ecommerce brands through a growing research library organized by industry and observed storefront strategy.',
   alternates: { canonical: '/library' },
   openGraph: {
     title: 'Ecommerce Website Library | INDIZIO',
-    description: 'A curated index of remarkable ecommerce storefronts and the details worth studying.',
+    description: 'Find the ecommerce brands solving growth, merchandising, and conversion problems relevant to yours.',
     url: '/library',
   },
 }

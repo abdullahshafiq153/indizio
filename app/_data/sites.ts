@@ -5,6 +5,7 @@ export type Site = {
   coverImage?: string
   industry: string
   style: string
+  tags?: string[]
   note: string
   url: string
   featured: number

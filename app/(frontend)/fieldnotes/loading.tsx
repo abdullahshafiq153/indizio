@@ -6,7 +6,7 @@ export default function FieldnotesLoading() {
       <EditorialHeader active="fieldnotes" />
       <main className="fieldnotes-page ruled-section" aria-busy="true" aria-label="Loading fieldnotes">
         <header className="fieldnotes-hero">
-          <div><p className="eyebrow">03 / CRO Fieldnotes</p><h1>Research for better decisions.</h1></div>
+          <div><p className="eyebrow">02 / CRO Fieldnotes</p><h1>Understand what stronger storefronts do differently.</h1></div>
           <p>Long-form brand teardowns, industry blueprints, and conversion patterns.</p>
         </header>
         <section className="featured-fieldnotes featured-fieldnotes--skeleton" aria-label="Loading featured notes">

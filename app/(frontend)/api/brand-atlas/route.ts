@@ -2,7 +2,7 @@ import config from '@payload-config'
 import { after, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
-import { brandNameFromDomain, crawlDomain, domainKey, normalizeStartURL } from '../../../../lib/brand-atlas'
+import { brandNameFromDomain, crawlDomain, domainKey, normalizeStartURL, type AtlasPage } from '../../../../lib/brand-atlas'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -10,14 +10,7 @@ const SHARED_CACHE_DAYS = 30
 const BACKGROUND_REFRESH_HOURS = 24
 
 type Relationship = string | number | { id: string | number }
-type AtlasPageRecord = {
-  id?: string | null
-  url: string
-  path: string
-  type: string
-  source: string
-  title?: string | null
-}
+type AtlasPageRecord = AtlasPage & { id?: string | null; title?: string | null }
 type CrawlRunRecord = {
   id: string | number
   owner: Relationship

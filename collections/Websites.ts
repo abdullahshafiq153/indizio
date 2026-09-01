@@ -41,7 +41,7 @@ export const Websites: CollectionConfig = {
       },
     },
     { name: 'industry', type: 'relationship', relationTo: 'industries' },
-    { name: 'styles', type: 'relationship', relationTo: 'styles', hasMany: true },
+    { name: 'styles', type: 'relationship', relationTo: 'styles', hasMany: true, label: 'Product tags' },
     { name: 'note', type: 'textarea' },
     { name: 'featuredRank', type: 'number', defaultValue: 0, index: true },
   ],

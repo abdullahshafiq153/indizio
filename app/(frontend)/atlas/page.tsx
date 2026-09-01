@@ -5,7 +5,7 @@ import { EditorialFooter, EditorialHeader } from '../../_components/editorial-ch
 
 export const metadata: Metadata = {
   title: 'Brand Atlas — Ecommerce URL Scraper',
-  description: 'Discover and organize the public URLs associated with an ecommerce brand or domain.',
+  description: 'Go beyond the homepage and uncover the public products, collections, landing pages, and content behind an ecommerce brand.',
   alternates: { canonical: '/atlas' },
 }
 

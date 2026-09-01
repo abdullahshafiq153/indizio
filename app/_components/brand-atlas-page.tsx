@@ -203,8 +203,8 @@ export function BrandAtlasPage() {
   return (
     <main id="brand-atlas" className="atlas-page ruled-section">
       <header className="atlas-hero">
-        <div><p className="eyebrow">03 / Brand Atlas</p><h1>Every public page.<br />One brand map.</h1></div>
-        <div className="atlas-hero__aside"><p>Enter an Indizio brand or paste a website URL. Brand Atlas discovers the public pages connected to its main domain and keeps every result in your history.</p><p className="atlas-limit-note">Sitemap-first discovery with a safe same-domain crawl fallback.</p></div>
+        <div><p className="eyebrow">03 / Brand Atlas</p><h1>Investigate beyond<br />the homepage.</h1></div>
+        <div className="atlas-hero__aside"><p>Enter an Indizio brand or paste a website URL to uncover the products, collections, landing pages, articles, and other public pages that reveal how the brand operates.</p><p className="atlas-limit-note">Results are organized into a reusable page index and kept in your private history.</p></div>
       </header>
 
       <section className="atlas-search" aria-labelledby="atlas-search-heading">

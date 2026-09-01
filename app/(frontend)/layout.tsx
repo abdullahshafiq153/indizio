@@ -3,6 +3,7 @@ import { DM_Mono, Manrope } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ViewerProvider } from '../_components/viewer-context'
+import { absoluteURL, jsonLd } from '../_data/seo'
 import '../../styles.css'
 
 const manrope = Manrope({
@@ -13,7 +14,7 @@ const manrope = Manrope({
 
 const dmMono = DM_Mono({
   subsets: ['latin'],
-  weight: ['300', '400', '500'],
+  weight: ['400', '500'],
   variable: '--font-dm-mono',
   display: 'swap',
 })
@@ -21,21 +22,21 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://indizio.space'),
   title: {
-    default: 'INDIZIO — Evidence from the storefront',
+    default: 'INDIZIO — Ecommerce intelligence for growing brands',
     template: '%s | INDIZIO',
   },
-  description: 'A living index of remarkable ecommerce websites, emerging patterns, and the details worth studying.',
+  description: 'Discover relevant ecommerce brands, investigate how their storefronts work, and turn real-world evidence into better growth decisions.',
   openGraph: {
-    title: 'INDIZIO — Evidence from the storefront',
-    description: 'Ecommerce websites, patterns, and research worth studying.',
+    title: 'INDIZIO — Ecommerce intelligence for growing brands',
+    description: 'Find the brands worth studying and the storefront decisions worth acting on.',
     url: 'https://indizio.space',
     siteName: 'INDIZIO',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'INDIZIO — Evidence from the storefront',
-    description: 'Ecommerce websites, patterns, and research worth studying.',
+    title: 'INDIZIO — Ecommerce intelligence for growing brands',
+    description: 'Find the brands worth studying and the storefront decisions worth acting on.',
   },
 }
 
@@ -46,10 +47,21 @@ export const viewport: Viewport = {
 }
 
 export default function FrontendLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${absoluteURL('/')}#organization`,
+    name: 'INDIZIO',
+    url: absoluteURL('/'),
+    logo: absoluteURL('/icon.svg'),
+    description: 'Independent ecommerce research, storefront intelligence, and conversion fieldnotes.',
+  }
+
   return (
     <html lang="en" className={`${manrope.variable} ${dmMono.variable}`}>
       <body>
         <ViewerProvider>{children}</ViewerProvider>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }} />
         <Analytics />
         <SpeedInsights />
       </body>

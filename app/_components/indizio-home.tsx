@@ -2,8 +2,9 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { BrandMark } from './brand-mark'
 import { useRouter } from 'next/navigation'
-import { FormEvent, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { FormEvent, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import {
   createBookmarkCollection,
   moveBookmark,
@@ -15,11 +16,12 @@ import {
 } from '../actions'
 import type {
   BookmarkCollectionSummary,
-  MemberSummary,
   SavedBookmarkSummary,
+  LibraryFilterMetadata,
 } from '../_data/load-library-data'
 import type { Site } from '../_data/sites'
 import { AccountMenu } from './account-menu'
+import { useViewer } from './viewer-context'
 
 type SortMode = 'featured' | 'newest' | 'az'
 type GridColumns = 2 | 3 | 4
@@ -32,26 +34,37 @@ type BookmarkToast = {
 } | null
 
 const INDUSTRIES = [
+  'Alcohol & Spirits',
   'Apparel',
   'Beauty',
   'Beverage',
   'Bicycle',
+  'Coffee',
   'Cookware',
+  'Electronics',
   'Everyday Carry',
+  'Eyewear',
   'Fitness',
   'Flower',
   'Food',
+  'Footwear',
+  'Fragrance',
   'Furniture',
   'Hair Care',
   'Health & Wellness',
+  'Hemp & Cannabis',
   'Home',
   'Jewelry',
-  'Kids',
+  'Kids & Baby',
   'Lifestyle',
   'Luggage',
+  'Oral Care',
   'Personal Care',
   'Pet',
-  'Swimsuit',
+  'Sexual Wellness',
+  'Supplements',
+  'Swimwear',
+  'Vape & Nicotine',
 ] as const
 
 const HOME_SKELETON_CARDS = Array.from({ length: 9 }, (_, index) => index)
@@ -84,18 +97,18 @@ function BookmarkIcon({ filled = false }: { filled?: boolean }) {
 
 type Props = {
   initialSites: Site[]
-  initialMember: MemberSummary | null
-  initialCollections: BookmarkCollectionSummary[]
-  initialBookmarks: SavedBookmarkSummary[]
+  initialTotal: number
+  filterMetadata: LibraryFilterMetadata
   mode?: 'home' | 'library'
   loading?: boolean
 }
 
-export function IndizioHome({ initialSites, initialMember, initialCollections, initialBookmarks, mode = 'home', loading = false }: Props) {
+export function IndizioHome({ initialSites, initialTotal, filterMetadata, mode = 'home', loading = false }: Props) {
   const isLibraryPage = mode === 'library'
   const initialVisible = isLibraryPage ? 12 : 9
   const skeletonCards = isLibraryPage ? LIBRARY_SKELETON_CARDS : HOME_SKELETON_CARDS
   const router = useRouter()
+  const viewer = useViewer()
   const [isPending, startTransition] = useTransition()
   const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup')
   const [authMessage, setAuthMessage] = useState('')
@@ -103,28 +116,38 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   const [bookmarkMessage, setBookmarkMessage] = useState('')
   const [bookmarkToast, setBookmarkToast] = useState<BookmarkToast>(null)
   const [bookmarkToastExiting, setBookmarkToastExiting] = useState(false)
-  const [bookmarks, setBookmarks] = useState(initialBookmarks)
+  const [bookmarks, setBookmarks] = useState<SavedBookmarkSummary[]>([])
   const [saveCounts, setSaveCounts] = useState(() => new Map(initialSites.filter((site) => site.id).map((site) => [site.id!, site.saveCount || 0])))
-  const [collections, setCollections] = useState(initialCollections)
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [collections, setCollections] = useState<BookmarkCollectionSummary[]>([])
+  const [sites, setSites] = useState(initialSites)
+  const [resultsTotal, setResultsTotal] = useState(initialTotal)
+  const [page, setPage] = useState(1)
+  const [fetchingSites, setFetchingSites] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(isLibraryPage)
+  const [savedPanelOpen, setSavedPanelOpen] = useState(false)
+  const [showAllIndustries, setShowAllIndustries] = useState(false)
+  const [showAllTags, setShowAllTags] = useState(false)
+  const [filterView, setFilterView] = useState<'industries' | 'tags'>('industries')
   const [industries, setIndustries] = useState<Set<string>>(new Set())
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
   const [menuOpen, setMenuOpen] = useState(false)
   const [newsletterMessage, setNewsletterMessage] = useState('No noise. Unsubscribe whenever you like.')
   const [googleNewsletterConsent, setGoogleNewsletterConsent] = useState(true)
   const [pendingBookmark, setPendingBookmark] = useState<Site | null>(null)
   const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)
   const [savedOnly, setSavedOnly] = useState(false)
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [selectedSite, setSelectedSite] = useState<Site | null>(null)
   const [sort, setSort] = useState<SortMode>('featured')
   const [gridColumns, setGridColumns] = useState<GridColumns>(3)
-  const [visible, setVisible] = useState(initialVisible)
   const [activeJourney, setActiveJourney] = useState('library')
   const authDialogRef = useRef<HTMLDialogElement>(null)
   const bookmarkDialogRef = useRef<HTMLDialogElement>(null)
   const infiniteScrollRef = useRef<HTMLDivElement>(null)
   const siteDialogRef = useRef<HTMLDialogElement>(null)
   const toastDismissTimeoutRef = useRef<number | null>(null)
+  const catalogMountedRef = useRef(false)
 
   useEffect(() => {
     if (isLibraryPage) return
@@ -140,7 +163,8 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
     return () => observer.disconnect()
   }, [isLibraryPage])
 
-  const authenticated = Boolean(initialMember)
+  const member = viewer.member
+  const authenticated = Boolean(member)
   const savedWebsiteIDs = useMemo(
     () => new Set(bookmarks.map((bookmark) => bookmark.websiteID)),
     [bookmarks],
@@ -151,25 +175,98 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   )
 
   const industryOptions = useMemo(
-    () => [...new Set([...INDUSTRIES, ...initialSites.map((site) => site.industry)])].sort(),
-    [initialSites],
+    () => [...new Set([...INDUSTRIES, ...filterMetadata.industryOptions])].sort(),
+    [filterMetadata.industryOptions],
   )
+  const tagOptions = useMemo(() => [...new Set(
+    [...industries].flatMap((industry) => filterMetadata.tagOptionsByIndustry[industry] || []),
+  )].sort(), [filterMetadata.tagOptionsByIndustry, industries])
+  const validTagSet = useMemo(() => new Set(tagOptions), [tagOptions])
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const industry of industries) {
+      for (const [tag, count] of Object.entries(filterMetadata.tagCountsByIndustry[industry] || {})) {
+        counts.set(tag, (counts.get(tag) || 0) + count)
+      }
+    }
+    return counts
+  }, [filterMetadata.tagCountsByIndustry, industries])
+  const activeFilterCount = industries.size + selectedTags.size + (savedOnly ? 1 : 0)
 
-  const filteredSites = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    const filtered = initialSites.filter((site) => {
-      const matchesText = !normalizedQuery || `${site.name} ${site.industry} ${site.style} ${site.note}`.toLowerCase().includes(normalizedQuery)
-      const matchesIndustry = industries.size === 0 || industries.has(site.industry)
-      const matchesSaved = !savedOnly || Boolean(site.id && selectedCollectionWebsiteIDs.has(site.id))
-      return matchesText && matchesIndustry && matchesSaved
+  useEffect(() => {
+    if (industries.size === 0 && filterView === 'tags') setFilterView('industries')
+    setSelectedTags((current) => {
+      const next = new Set([...current].filter((tag) => validTagSet.has(tag)))
+      return next.size === current.size ? current : next
     })
+  }, [filterView, industries.size, validTagSet])
 
-    return filtered.sort((a, b) => {
-      if (sort === 'az') return a.name.localeCompare(b.name)
-      if (sort === 'newest') return initialSites.indexOf(a) - initialSites.indexOf(b)
-      return b.featured - a.featured
-    })
-  }, [industries, initialSites, query, savedOnly, selectedCollectionWebsiteIDs, sort])
+  const filteredSites = sites
+
+  useEffect(() => {
+    if (!member) {
+      setBookmarks([])
+      setCollections([])
+      return
+    }
+    const controller = new AbortController()
+    void fetch('/api/bookmark-state', { cache: 'no-store', signal: controller.signal })
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((state: { bookmarks: SavedBookmarkSummary[]; collections: BookmarkCollectionSummary[] }) => {
+        setBookmarks(state.bookmarks)
+        setCollections(state.collections)
+      })
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [member])
+
+  const savedFilterIDs = savedOnly ? [...selectedCollectionWebsiteIDs].sort().join(',') : ''
+  useEffect(() => {
+    if (loading) return
+    if (!catalogMountedRef.current) {
+      catalogMountedRef.current = true
+      return
+    }
+    if (savedOnly && !savedFilterIDs) {
+      setSites([])
+      setResultsTotal(0)
+      setPage(1)
+      return
+    }
+
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(initialVisible),
+        sort,
+      })
+      if (deferredQuery.trim()) params.set('query', deferredQuery.trim())
+      if (industries.size) params.set('industries', [...industries].join(','))
+      if (selectedTags.size) params.set('tags', [...selectedTags].join(','))
+      if (savedFilterIDs) params.set('websiteIDs', savedFilterIDs)
+
+      setFetchingSites(true)
+      void fetch(`/api/library?${params}`, { signal: controller.signal })
+        .then((response) => response.ok ? response.json() : Promise.reject())
+        .then((result: { sites: Site[]; total: number }) => {
+          setSites((current) => page === 1 ? result.sites : [...current, ...result.sites])
+          setResultsTotal(result.total)
+          setSaveCounts((current) => {
+            const next = new Map(current)
+            for (const site of result.sites) if (site.id) next.set(site.id, site.saveCount || 0)
+            return next
+          })
+        })
+        .catch(() => undefined)
+        .finally(() => setFetchingSites(false))
+    }, page === 1 ? 180 : 0)
+
+    return () => {
+      window.clearTimeout(timeout)
+      controller.abort()
+    }
+  }, [deferredQuery, industries, initialVisible, loading, page, savedFilterIDs, savedOnly, selectedTags, sort])
 
   const showBookmarkToast = (toast: Exclude<BookmarkToast, null>) => {
     if (toastDismissTimeoutRef.current) window.clearTimeout(toastDismissTimeoutRef.current)
@@ -207,26 +304,25 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
   }, [])
 
   useEffect(() => {
-    if (!isLibraryPage || visible >= filteredSites.length) return
+    if (!isLibraryPage || fetchingSites || filteredSites.length >= resultsTotal) return
     const target = infiniteScrollRef.current
     if (!target) return
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setVisible((count) => Math.min(count + 9, filteredSites.length))
-      }
+      if (entry.isIntersecting) setPage((current) => current + 1)
     }, { rootMargin: '500px 0px' })
 
     observer.observe(target)
     return () => observer.disconnect()
-  }, [filteredSites.length, isLibraryPage, visible])
+  }, [fetchingSites, filteredSites.length, isLibraryPage, resultsTotal])
 
   const resetFilters = () => {
     setQuery('')
     setIndustries(new Set())
+    setSelectedTags(new Set())
     setSavedOnly(false)
     setSelectedCollection(null)
-    setVisible(initialVisible)
+    setPage(1)
   }
 
   const toggleIndustry = (industry: string) => {
@@ -236,8 +332,40 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       else next.add(industry)
       return next
     })
+    setFilterView('tags')
+    setShowAllTags(false)
     setSavedOnly(false)
-    setVisible(initialVisible)
+    setPage(1)
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((current) => {
+      const next = new Set(current)
+      if (next.has(tag)) next.delete(tag)
+      else next.add(tag)
+      return next
+    })
+    setSavedOnly(false)
+    setPage(1)
+  }
+
+  const removeIndustry = (industry: string) => {
+    setIndustries((current) => {
+      const next = new Set(current)
+      next.delete(industry)
+      return next
+    })
+    setShowAllTags(false)
+    setPage(1)
+  }
+
+  const removeTag = (tag: string) => {
+    setSelectedTags((current) => {
+      const next = new Set(current)
+      next.delete(tag)
+      return next
+    })
+    setPage(1)
   }
 
   const openAuth = (site: Site | null = null) => {
@@ -261,7 +389,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
   const openCollectionChanger = (bookmarkID: string, websiteID: string) => {
     setActiveBookmarkID(bookmarkID)
-    setPendingBookmark(initialSites.find((site) => site.id === websiteID) || null)
+    setPendingBookmark(sites.find((site) => site.id === websiteID) || null)
     setBookmarkMessage('')
     bookmarkDialogRef.current?.showModal()
   }
@@ -474,11 +602,12 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       </div>
 
       <header className="site-header">
-        <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
+        <Link className="wordmark" href="/" aria-label="INDIZIO home"><BrandMark className="wordmark__mark" />INDIZIO</Link>
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link href="/library" aria-current={isLibraryPage ? 'page' : undefined}>Website library</Link>
           <Link href="/fieldnotes">CRO fieldnotes</Link>
           <Link href="/atlas">Brand Atlas</Link>
+          <Link href="/extension">Extension</Link>
         </nav>
         <div className="header-actions">
           {authenticated && (
@@ -488,13 +617,13 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               </Link>
             </div>
           )}
-          {authenticated && initialMember ? <AccountMenu member={initialMember} /> : <button className="line-button header-cta" type="button" onClick={handleAccount}><span>Login / Register</span><span className="line-button__icon" aria-hidden="true">→</span></button>}
+          {viewer.loading ? <span className="header-account-placeholder" aria-hidden="true" /> : authenticated && member ? <AccountMenu member={member} /> : <button className="line-button header-cta" type="button" onClick={handleAccount}><span>Login / Register</span><span className="line-button__icon" aria-hidden="true">→</span></button>}
         </div>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen((open) => !open)}>Menu</button>
       </header>
 
       <nav className="mobile-menu" id="mobile-menu" aria-label="Mobile navigation" hidden={!menuOpen} onClick={() => setMenuOpen(false)}>
-        <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link>
+        <Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/extension">Extension</Link>
         {authenticated && <><Link href="/bookmarks">Bookmarks ({savedWebsiteIDs.size})</Link><Link href="/account">Manage account</Link></>}
         {!authenticated && <button className="mobile-account-button" type="button" onClick={handleAccount}>Log in</button>}
       </nav>
@@ -502,59 +631,59 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
       <main id="top">
         {!isLibraryPage && <section className="hero ruled-section">
           <div className="hero__headline">
-            <p className="eyebrow"><span className="signal-dot" />Independent ecommerce research</p>
-            <h1>Evidence from<br />the storefront.</h1>
+            <p className="eyebrow"><span className="signal-dot" />Ecommerce intelligence for growing brands</p>
+            <h1>See what leading brands<br />are doing differently.</h1>
             <div className="hero__aside-copy">
-              <p className="hero__intro">A living index of remarkable ecommerce websites, emerging patterns, and the details worth studying.</p>
+              <p className="hero__intro">Indizio studies storefronts, customer journeys, and conversion patterns to help ambitious brands decide what to build, change, and test next.</p>
               <Link className="line-button line-button--dark hero__cta" href="/library">
-                <span>View complete library</span><span className="line-button__icon" aria-hidden="true">↗</span>
+                <span>Find brands like yours</span><span className="line-button__icon" aria-hidden="true">↗</span>
               </Link>
             </div>
           </div>
           <div className="hero-paths hero-paths--hero" aria-label="Choose your path through INDIZIO">
-            <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Discover</span><span className="hero-path__copy"><strong>Website library</strong><span>Find remarkable ecommerce storefronts selected for the decisions behind their design.</span></span><span className="hero-path__cta">Browse websites <i aria-hidden="true">↗</i></span></Link>
-            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">02 / Understand</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Turn storefront observations into research, teardowns, and evidence-backed decisions.</span></span><span className="hero-path__cta">Read fieldnotes <i aria-hidden="true">↗</i></span></Link>
-            <Link className="hero-path hero-path--atlas" href="/atlas"><span className="hero-path__meta">03 / Map</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Reveal the products, collections, content, policies, and conversion paths across a brand.</span></span><span className="hero-path__cta">Map a brand <i aria-hidden="true">↗</i></span></Link>
+            <Link className="hero-path" href="/library"><span className="hero-path__meta">01 / Discover</span><span className="hero-path__copy"><strong>Website library</strong><span>Find brands solving the same growth, merchandising, and conversion problems as you.</span></span><span className="hero-path__cta">Explore the library <i aria-hidden="true">↗</i></span></Link>
+            <Link className="hero-path" href="/fieldnotes"><span className="hero-path__meta">02 / Understand</span><span className="hero-path__copy"><strong>CRO fieldnotes</strong><span>Understand how leading brands communicate value, reduce hesitation, and move customers toward conversion.</span></span><span className="hero-path__cta">Read the research <i aria-hidden="true">↗</i></span></Link>
+            <Link className="hero-path hero-path--atlas" href="/atlas"><span className="hero-path__meta">03 / Investigate</span><span className="hero-path__copy"><strong>Brand Atlas</strong><span>Go beyond the homepage to uncover the public pages that reveal how a brand actually operates.</span></span><span className="hero-path__cta">Map a brand <i aria-hidden="true">↗</i></span></Link>
           </div>
         </section>}
 
-        <section className={`library ruled-section ${isLibraryPage ? 'library--page' : 'library--home'}`} id="library" aria-busy={loading}>
+        <section className={`library ruled-section ${isLibraryPage ? 'library--page' : 'library--home'}`} id="library" aria-busy={loading || fetchingSites}>
           {isLibraryPage && <div className="section-heading">
-            <div><p className="eyebrow">The complete index / 001</p><h2>Websites worth studying.</h2></div>
-            <p>Browse the complete, continuously growing index of storefronts selected for the decisions behind their design.</p>
+            <div><p className="eyebrow">The complete index / 001</p><h2>Find the brands worth studying.</h2></div>
+            <p>Explore a growing research library of ecommerce brands organized to help you find relevant comparisons—not random inspiration.</p>
           </div>}
           {!isLibraryPage && <div className="section-heading section-heading--home">
-            <div><p className="eyebrow">The website library</p><h2>Websites worth studying.</h2></div>
-            <p>Browse storefronts selected for the decisions behind their design—not simply how the homepage looks.</p>
+            <div><p className="eyebrow">The website library</p><h2>Find the brands worth studying.</h2></div>
+            <p>Explore storefronts by industry and observed strategy, then investigate the decisions most relevant to your own brand.</p>
           </div>}
 
           <div className="library-tools">
             <label className="search-field">
               <span className="visually-hidden">Search websites</span><span aria-hidden="true">⌕</span>
-              <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setVisible(initialVisible) }} placeholder="Search by brand, industry, or observation" autoComplete="off" disabled={loading} />
+              <input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1) }} placeholder="Search by brand, industry, or observation" autoComplete="off" disabled={loading} />
             </label>
-            {isLibraryPage && authenticated && collections.length > 0 && <button className="filter-trigger" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
-              Saved <span>{savedOnly ? 1 : 0}</span><span aria-hidden="true">＋</span>
+            <button className="filter-trigger" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}>
+              Filters <span>{activeFilterCount}</span><span aria-hidden="true">{filtersOpen ? '−' : '＋'}</span>
+            </button>
+            {isLibraryPage && authenticated && collections.length > 0 && <button className="filter-trigger filter-trigger--saved" type="button" aria-expanded={savedPanelOpen} onClick={() => setSavedPanelOpen((open) => !open)}>
+              Saved <span>{savedOnly ? 1 : 0}</span><span aria-hidden="true">{savedPanelOpen ? '−' : '＋'}</span>
             </button>}
           </div>
 
-          {isLibraryPage && authenticated && collections.length > 0 && <div className="filter-panel" hidden={!filtersOpen}>
+          {isLibraryPage && authenticated && collections.length > 0 && <div className="filter-panel" hidden={!savedPanelOpen}>
             <div><p className="filter-label">Saved collections</p><div className="filter-options">
-              <button className={`filter-chip${savedOnly && !selectedCollection ? ' active' : ''}`} type="button" onClick={() => { setSavedOnly(true); setSelectedCollection(null); setIndustries(new Set()); setVisible(initialVisible) }}>All saved</button>
+              <button className={`filter-chip${savedOnly && !selectedCollection ? ' active' : ''}`} type="button" onClick={() => { setSavedOnly(true); setSelectedCollection(null); setIndustries(new Set()); setSelectedTags(new Set()); setPage(1) }}>All saved</button>
               {collections.map((collection) => (
-                <button className={`filter-chip${selectedCollection === collection.id ? ' active' : ''}`} type="button" key={collection.id} onClick={() => { setSavedOnly(true); setSelectedCollection(collection.id); setIndustries(new Set()); setVisible(initialVisible) }}>{collection.name} · {collection.count}</button>
+                <button className={`filter-chip${selectedCollection === collection.id ? ' active' : ''}`} type="button" key={collection.id} onClick={() => { setSavedOnly(true); setSelectedCollection(collection.id); setIndustries(new Set()); setSelectedTags(new Set()); setPage(1) }}>{collection.name} · {collection.count}</button>
               ))}
             </div></div>
             <button className="text-button" type="button" onClick={resetFilters}>Clear all</button>
           </div>}
 
-          <div className={`library-body library-body--with-filters${isLibraryPage || filtersOpen ? ' library-body--filters-visible' : ''}`}>
+          <div className={`library-body library-body--with-filters${filtersOpen ? ' library-body--filters-visible' : ''}`}>
           <div className="library-results"><div className="results-meta">
-            <p>{loading ? <span className="skeleton-block skeleton-results-count" aria-label="Loading website count" /> : <>{filteredSites.length} {savedOnly ? 'saved websites' : 'discoveries'}</>}</p>
+            <p>{loading ? <span className="skeleton-block skeleton-results-count" aria-label="Loading website count" /> : <>{resultsTotal} {savedOnly ? 'saved websites' : 'discoveries'}</>}</p>
             <div className="results-controls">
-              {!isLibraryPage && <button className="industries-toggle" type="button" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)} disabled={loading}>
-                <span>Industries</span><span>{industries.size || 'All'}</span><i aria-hidden="true" />
-              </button>}
               <label className="view-select">View
                 <select value={gridColumns} onChange={(event) => setGridColumns(Number(event.target.value) as GridColumns)} aria-label="Cards per row" disabled={loading}>
                   <option value={2}>2 columns</option>
@@ -562,9 +691,17 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                   <option value={4}>4 columns</option>
                 </select>
               </label>
-              <label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} disabled={loading}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
+              <label>Sort <select value={sort} onChange={(event) => { setSort(event.target.value as SortMode); setPage(1) }} disabled={loading}><option value="featured">Featured</option><option value="newest">Newest</option><option value="az">A–Z</option></select></label>
             </div>
           </div>
+
+          {activeFilterCount > 0 && <div className="active-filters" aria-label="Active filters">
+            <span className="active-filters__label">Filtering by</span>
+            {[...industries].map((industry) => <button type="button" key={industry} onClick={() => removeIndustry(industry)}>{industry}<span aria-hidden="true">×</span></button>)}
+            {[...selectedTags].map((tag) => <button type="button" key={tag} onClick={() => removeTag(tag)}>{tag}<span aria-hidden="true">×</span></button>)}
+            {savedOnly && <button type="button" onClick={() => { setSavedOnly(false); setSelectedCollection(null); setPage(1) }}>{selectedCollection ? collections.find((collection) => collection.id === selectedCollection)?.name : 'All saved'}<span aria-hidden="true">×</span></button>}
+            <button className="active-filters__clear" type="button" onClick={resetFilters}>Clear all</button>
+          </div>}
 
           <div className="card-grid" data-columns={gridColumns} aria-live="polite">
             {loading ? skeletonCards.map((item) => (
@@ -573,24 +710,24 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
                 <span className="skeleton-block skeleton-card__title" />
                 <span className="skeleton-block skeleton-card__detail" />
               </article>
-            )) : filteredSites.slice(0, visible).map((site, index) => {
+            )) : filteredSites.map((site) => {
               const bookmarked = Boolean(authenticated && site.id && savedWebsiteIDs.has(site.id))
               const saveCount = saveCounts.get(site.id || '') || 0
               return (
                 <article className="site-card" key={site.name}>
                   <div className="card-visual">
                     <button className="card-open" type="button" onClick={() => { setSelectedSite(site); siteDialogRef.current?.showModal() }} aria-label={`Open ${site.name} fieldnote`}>
-                      {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, (max-width: 1440px) 25vw, 320px" quality={70} preload={index < 3} />}
+                      {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, (max-width: 1440px) 33vw, 420px" quality={70} unoptimized={!site.coverImage.includes('cdn.sanity.io') && !site.coverImage.includes('public.blob.vercel-storage.com') && !site.coverImage.includes('indizio.space/api/media/file/')} />}
                       {!site.coverImage && <span className="card-mark">{site.name}</span>}
                     </button>
                   </div>
                   <div className="card-meta">
-                    <div className="card-title-row"><h3>{site.name}</h3><div className="card-actions">
+                    <div className="card-title-row"><h3>{site.slug ? <Link href={`/brands/${site.slug}`}>{site.name}</Link> : site.name}</h3><div className="card-actions">
                       <Link className="card-action" href={`/atlas?url=${encodeURIComponent(site.url)}`} aria-label={`Map ${site.name} in Brand Atlas`} title="Map in Brand Atlas"><AtlasIcon /></Link>
                       <a className="card-action" href={site.url} target="_blank" rel="noreferrer" aria-label={`Visit ${site.name} website`} title="Visit website"><ExternalIcon /></a>
                       <button className="card-action card-save-action" type="button" onClick={() => openBookmark(site)} aria-label={`${bookmarked ? 'Remove saved research for' : authenticated ? 'Save' : 'Sign up to save'} ${site.name}`} aria-pressed={bookmarked} title={bookmarked ? 'Remove save' : authenticated ? 'Save website' : 'Sign up to save'}><BookmarkIcon filled={bookmarked} />{saveCount >= 5 && <span>{saveCount}</span>}</button>
                     </div></div>
-                    <div className="card-detail-row"><p>{site.industry} · {site.style}</p></div>
+                    <div className="card-taxonomy"><button className="card-industry" type="button" onClick={() => { setIndustries(new Set([site.industry])); setSelectedTags(new Set()); setFilterView('tags'); setFiltersOpen(true); setPage(1) }}>{site.industry}</button>{site.tags?.slice(0, 3).map((tag) => <button className="card-tag" type="button" onClick={() => { setIndustries(new Set([site.industry])); setSelectedTags(new Set([tag])); setFilterView('tags'); setFiltersOpen(true); setPage(1) }} key={tag}>{tag}</button>)}{(site.tags?.length || 0) > 3 && <span className="card-tag card-tag--more">+{site.tags!.length - 3}</span>}</div>
                   </div>
                 </article>
               )
@@ -598,8 +735,8 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
 
           {!loading && filteredSites.length === 0 && <div className="empty-state"><p>No signals found.</p><button className="text-button" type="button" onClick={resetFilters}>Reset the library</button></div>}
-          {!loading && !isLibraryPage && visible < filteredSites.length && <div className="load-more-wrap"><button className="line-button" type="button" onClick={() => setVisible((count) => count + 6)}><span>Load more websites</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
-          {!loading && isLibraryPage && visible < filteredSites.length && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status">
+          {!loading && !isLibraryPage && filteredSites.length < resultsTotal && <div className="load-more-wrap"><button className="line-button" type="button" disabled={fetchingSites} onClick={() => setPage((current) => current + 1)}><span>{fetchingSites ? 'Loading websites' : 'Load more websites'}</span><span className="line-button__icon" aria-hidden="true">＋</span></button></div>}
+          {!loading && isLibraryPage && filteredSites.length < resultsTotal && <div className="infinite-scroll-status" ref={infiniteScrollRef} role="status">
             <span className="visually-hidden">Loading more websites</span>
             <div className="card-grid skeleton-grid skeleton-grid--more" aria-hidden="true">
               {[0, 1, 2].map((item) => (
@@ -611,22 +748,37 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
               ))}
             </div>
           </div>}
-          {!loading && isLibraryPage && filteredSites.length > 0 && visible >= filteredSites.length && <p className="library-end">You have reached the end of the current index.</p>}
+          {!loading && isLibraryPage && filteredSites.length > 0 && filteredSites.length >= resultsTotal && <p className="library-end">You have reached the end of the current index.</p>}
           </div>
-          {(isLibraryPage || filtersOpen) && <aside className="filter-sidebar" aria-label="Filter websites by industry">
-            <div className="filter-sidebar__head"><p className="filter-label">Industries</p>{industries.size > 0 && <button className="text-button" type="button" onClick={resetFilters}>Clear</button>}</div>
+          {filtersOpen && <aside className="filter-sidebar" aria-label="Filter websites">
+            <div className="filter-sidebar__title"><div><p className="eyebrow">Refine the index</p><strong>Filters</strong></div><button type="button" onClick={() => setFiltersOpen(false)} aria-label="Close filters">×</button></div>
+            <div className="filter-view-tabs" role="tablist" aria-label="Filter steps">
+              <button className={filterView === 'industries' ? 'active' : ''} type="button" role="tab" aria-selected={filterView === 'industries'} onClick={() => setFilterView('industries')}>01 Industry <span>{industries.size || ''}</span></button>
+              <button className={filterView === 'tags' ? 'active' : ''} type="button" role="tab" aria-selected={filterView === 'tags'} aria-disabled={industries.size === 0} onClick={() => industries.size > 0 && setFilterView('tags')}>02 Product tags <span>{selectedTags.size || ''}</span></button>
+            </div>
+            {filterView === 'industries' ? <><div className="filter-sidebar__head"><p className="filter-label">Choose an industry</p>{industries.size > 0 && <button className="text-button" type="button" onClick={() => { setIndustries(new Set()); setSelectedTags(new Set()); setPage(1) }}>Clear</button>}</div>
             <div className="filter-sidebar__options">
-              {industryOptions.map((industry) => <label className="sidebar-filter" key={industry}>
+              {industryOptions.slice(0, showAllIndustries ? undefined : 8).map((industry) => <label className="sidebar-filter" key={industry}>
                 <input type="checkbox" checked={industries.has(industry)} onChange={() => toggleIndustry(industry)} disabled={loading} />
-                <span>{industry}</span>
+                <span>{industry}</span><small>{filterMetadata.industryCounts[industry] || 0}</small>
               </label>)}
             </div>
+            {industryOptions.length > 8 && <button className="filter-show-more" type="button" onClick={() => setShowAllIndustries((value) => !value)}>{showAllIndustries ? 'Show fewer' : `Show all ${industryOptions.length}`}</button>}</> : <><div className="filter-sidebar__head"><p className="filter-label">Tags for {[...industries].join(', ')}</p>{selectedTags.size > 0 && <button className="text-button" type="button" onClick={() => { setSelectedTags(new Set()); setPage(1) }}>Clear</button>}</div>
+            {tagOptions.length > 0 ? <>
+              <div className="filter-sidebar__options">
+                {tagOptions.slice(0, showAllTags ? undefined : 8).map((tag) => <label className="sidebar-filter" key={tag}>
+                  <input type="checkbox" checked={selectedTags.has(tag)} onChange={() => toggleTag(tag)} disabled={loading} />
+                  <span>{tag}</span><small>{tagCounts.get(tag) || 0}</small>
+                </label>)}
+              </div>
+              {tagOptions.length > 8 && <button className="filter-show-more" type="button" onClick={() => setShowAllTags((value) => !value)}>{showAllTags ? 'Show fewer' : `Show all ${tagOptions.length}`}</button>}
+            </> : <p className="filter-dependent-note">No product tags are assigned to this industry yet.</p>}</>}
           </aside>}
           </div>
         </section>
 
         {!isLibraryPage && <><section className="journey-showcase ruled-section" id="industries" aria-labelledby="journey-heading">
-          <header className="journey-showcase__heading"><p className="eyebrow">How INDIZIO works</p><h2 id="journey-heading">From discovery<br />to useful evidence.</h2></header>
+          <header className="journey-showcase__heading"><p className="eyebrow">How INDIZIO works</p><h2 id="journey-heading">From market signal<br />to better decision.</h2></header>
           <div className="journey-showcase__layout">
             <nav className="journey-showcase__nav" aria-label="INDIZIO journeys">
               <a className={activeJourney === 'library' ? 'active' : ''} href="#journey-library" aria-current={activeJourney === 'library' ? 'step' : undefined}><span>01</span>Discover websites</a>
@@ -635,32 +787,40 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
             </nav>
             <div className="journey-showcase__panels">
               <article className="journey-panel" id="journey-library" data-journey="library">
-                <div className="journey-panel__copy"><p className="eyebrow">01 / Website library</p><h3>Discover storefronts worth studying.</h3><p>Search a curated index of ecommerce brands, filter by industry, and save the strongest references into your own collections.</p><Link className="text-button" href="/library">Explore the library ↗</Link></div>
+                <div className="journey-panel__copy"><p className="eyebrow">01 / Website library</p><h3>Find brands relevant to yours.</h3><p>Start with carefully classified ecommerce brands and narrow the market by industry, product category, and observed strategy.</p><Link className="text-button" href="/library">Explore the library ↗</Link></div>
                 <div className="journey-visual journey-visual--library" aria-hidden="true"><div className="journey-search">Search the index <span>⌕</span></div><div className="journey-card-row"><span>Apparel</span><span>Beauty</span><span>Wellness</span></div><div className="journey-card-row journey-card-row--images"><i /><i /><i /></div></div>
               </article>
               <article className="journey-panel" id="journey-fieldnotes" data-journey="fieldnotes">
-                <div className="journey-panel__copy"><p className="eyebrow">02 / CRO fieldnotes</p><h3>Understand why the details work.</h3><p>Move beyond visual inspiration with original brand research, conversion observations, and practical ideas you can test.</p><Link className="text-button" href="/fieldnotes">Read the fieldnotes ↗</Link></div>
+                <div className="journey-panel__copy"><p className="eyebrow">02 / CRO fieldnotes</p><h3>Understand what the evidence means.</h3><p>Use original storefront research to see how leading brands communicate value, reduce hesitation, and shape the path to purchase.</p><Link className="text-button" href="/fieldnotes">Read the research ↗</Link></div>
                 <div className="journey-visual journey-visual--notes" aria-hidden="true"><span className="journey-note-tag">Fieldnote / Conversion</span><strong>The clues behind a higher-converting product page.</strong><p>Evidence, annotations, and patterns recorded from the storefront.</p><div><span>Trust</span><span>Merchandising</span><span>UX</span></div></div>
               </article>
               <article className="journey-panel" id="journey-atlas" data-journey="atlas">
-                <div className="journey-panel__copy"><p className="eyebrow">03 / Brand Atlas</p><h3>See the whole brand, not one homepage.</h3><p>Enter a domain and uncover its public products, collections, articles, policies, landing pages, and conversion flows in one reusable map.</p><Link className="text-button" href="/atlas">Open Brand Atlas ↗</Link></div>
+                <div className="journey-panel__copy"><p className="eyebrow">03 / Brand Atlas</p><h3>Investigate beyond the homepage.</h3><p>Enter a domain and uncover its public products, collections, articles, policies, and landing pages in one reusable index.</p><Link className="text-button" href="/atlas">Open Brand Atlas ↗</Link></div>
                 <div className="journey-visual journey-visual--atlas" aria-hidden="true"><div className="atlas-node atlas-node--root">Brand.com</div><span className="atlas-line" /><div className="atlas-node-grid"><span>Products</span><span>Collections</span><span>Journal</span><span>Policies</span></div></div>
               </article>
             </div>
           </div>
         </section>
 
-        <section className="stat-strip" aria-label="Library statistics">
-          <div><strong>001</strong><span>Edition</span></div><div><strong>{loading ? <span className="skeleton-block skeleton-stat-value" aria-label="Loading website total" /> : String(initialSites.length).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
+        <section className="dark-context ruled-section" id="context" aria-labelledby="dark-context-heading">
+          <div className="dark-context__copy">
+            <p className="eyebrow">Commerce intelligence from the open web</p>
+            <h2 id="dark-context-heading">See what is changing.<br />Decide what to do next.</h2>
+            <p>INDIZIO connects relevant brands, original CRO research, complete page indexes, and private research collections—so evidence becomes action.</p>
+          </div>
+        </section>
+
+        <section className="stat-strip stat-strip--dark" aria-label="Library statistics">
+          <div><strong>001</strong><span>Edition</span></div><div><strong>{loading ? <span className="skeleton-block skeleton-stat-value" aria-label="Loading website total" /> : String(initialTotal).padStart(2, '0')}</strong><span>Websites indexed</span></div><div><strong>{String(INDUSTRIES.length).padStart(2, '0')}</strong><span>Industries</span></div><div><strong>Weekly</strong><span>Research cadence</span></div>
         </section>
 
         <section className="extension-section ruled-section" aria-labelledby="extension-heading">
           <div className="extension-section__copy">
-            <p className="eyebrow">Indizio for Chrome / Available now</p>
-            <h2 id="extension-heading">Your research library,<br />wherever you browse.</h2>
-            <p>Capture any website or exact page without breaking your flow. Add a note, choose a collection, and keep private discoveries alongside the public Indizio library—ready to revisit from the extension or your account.</p>
+            <p className="eyebrow">Indizio for Chrome / Development release</p>
+            <h2 id="extension-heading">Build a private research system<br />for your brand.</h2>
+            <p>Capture any useful page without breaking your flow. Add an observation, organize it by project or conversion opportunity, and keep private discoveries beside the public Indizio library.</p>
             <ul className="extension-section__features"><li>Save the exact page, not only the domain</li><li>Organize discoveries into research collections</li><li>Open your complete Indizio library from any tab</li></ul>
-            <div className="extension-section__actions"><Link className="line-button line-button--dark" href="/extension"><span>Explore the extension</span><span className="line-button__icon" aria-hidden="true">↗</span></Link><a className="text-button" href="/downloads/indizio-extension-v0.1.0.zip" download>Download extension</a></div>
+            <div className="extension-section__actions"><Link className="line-button line-button--dark" href="/extension"><span>Explore the extension</span><span className="line-button__icon" aria-hidden="true">↗</span></Link></div>
           </div>
           <div className="extension-preview" aria-label="Preview of the Indizio Chrome extension">
             <div className="extension-preview__bar"><span /><span>indizio.space</span><span>•••</span></div>
@@ -677,18 +837,19 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
           </div>
         </section>
 
-        <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>What 100 storefronts tell us about ecommerce now.</h2><p>The first Indizio Index maps the design decisions, trust signals, and merchandising patterns appearing across twelve industries.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>
+        <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>100 storefronts. 10 industries. One view of ecommerce now.</h2><p>The first Indizio Ecommerce Index will study the most instructive storefronts across ten industries—revealing the decisions, trust signals, and merchandising patterns worth paying attention to.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>
 
-        <section className="about ruled-section" id="about"><p className="eyebrow">About the work</p><p>INDIZIO means “a clue” in Italian. This is a record of the clues hiding in plain sight across modern commerce—the small choices that shape how people understand, trust, and buy from a brand.</p></section></>}
+        <section className="about ruled-section" id="about"><p className="eyebrow">About Indizio</p><p>INDIZIO means “a clue” in Italian. We organize the clues hiding across modern commerce—helping growing brands understand what leading storefronts are doing and decide what to build, change, and test next.</p></section></>}
 
-        {isLibraryPage && <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>What 100 storefronts tell us about ecommerce now.</h2><p>The first Indizio Index maps the design decisions, trust signals, and merchandising patterns appearing across twelve industries.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>}
+        {isLibraryPage && <section className="index-report ruled-section" id="index-report"><div className="report-art" aria-hidden="true"><span className="report-art__index">INDEX<br />2026</span><span className="crosshair crosshair--one" /><span className="crosshair crosshair--two" /></div><div className="report-copy"><p className="eyebrow">Coming soon / Report 001</p><h2>100 storefronts. 10 industries. One view of ecommerce now.</h2><p>The first Indizio Ecommerce Index will study the most instructive storefronts across ten industries—revealing the decisions, trust signals, and merchandising patterns worth paying attention to.</p><a className="line-button line-button--dark" href="#newsletter"><span>Get the report at launch</span><span className="line-button__icon" aria-hidden="true">↗</span></a></div></section>}
 
-        {!isLibraryPage && <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">03 / Indizio weekly</p><h2>Seven signals.<br />Every Thursday.</h2></div><div className="newsletter__form-wrap"><p>Ecommerce websites, patterns, and ideas worth studying—selected and annotated in one concise fieldnote.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
+        {!isLibraryPage && <section className="newsletter ruled-section" id="newsletter"><div><p className="eyebrow">Indizio Weekly</p><h2>Seven signals.<br />One useful briefing.</h2></div><div className="newsletter__form-wrap"><p>The storefront decisions, emerging patterns, and practical experiments worth paying attention to—selected for people growing ecommerce brands.</p><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="email">Email address</label><input id="email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join Indizio Weekly'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
       </main>
 
       <footer className="site-footer">
-        {isLibraryPage && <section className="footer-newsletter" id="newsletter"><div><p className="footer-label">Indizio weekly</p><p className="footer-newsletter__headline">Seven signals, every Thursday.</p></div><div className="footer-newsletter__signup"><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="footer-email">Email address</label><input id="footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
-        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/extension">Chrome extension</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
+        {isLibraryPage && <section className="footer-newsletter" id="newsletter"><div><p className="footer-label">Indizio Weekly</p><p className="footer-newsletter__headline">Seven signals. One useful briefing.</p></div><div className="footer-newsletter__signup"><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="footer-email">Email address</label><input id="footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join Indizio Weekly'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>}
+        <nav className="footer-index-links" aria-label="Popular ecommerce industries"><span>Browse by industry</span><Link href="/industries/apparel">Apparel</Link><Link href="/industries/beauty">Beauty</Link><Link href="/industries/coffee">Coffee</Link><Link href="/industries/food">Food</Link><Link href="/industries/supplements">Supplements</Link><Link href="/industries/home">Home</Link></nav>
+        <div className="footer-meta"><div className="footer-brand"><BrandMark className="footer-brand__mark" title="INDIZIO" /><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/extension">Chrome extension</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
       </footer>
 
       {bookmarkToast && (
@@ -716,7 +877,7 @@ export function IndizioHome({ initialSites, initialMember, initialCollections, i
 
       <dialog className="site-dialog" ref={siteDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
         <button className="dialog-close" type="button" aria-label="Close" onClick={() => siteDialogRef.current?.close()}>×</button>
-        {selectedSite && <><div className={`dialog-visual${selectedSite.coverImage ? ' has-cover' : ''}`}>{selectedSite.coverImage ? <Image src={selectedSite.coverImage} alt={`${selectedSite.name} website cover`} fill sizes="(max-width: 760px) 100vw, 620px" quality={80} /> : selectedSite.name}</div><div className="dialog-copy"><p className="eyebrow">{selectedSite.industry} / {selectedSite.style}</p><h2>{selectedSite.name}</h2>{selectedSite.note && <p>{selectedSite.note}</p>}<a className="line-button line-button--dark" href={selectedSite.url} target="_blank" rel="noreferrer"><span>Visit storefront</span><span className="line-button__icon">↗</span></a></div></>}
+        {selectedSite && <><div className={`dialog-visual${selectedSite.coverImage ? ' has-cover' : ''}`}>{selectedSite.coverImage ? <Image src={selectedSite.coverImage} alt={`${selectedSite.name} website cover`} fill sizes="(max-width: 760px) 100vw, 620px" quality={80} unoptimized={!selectedSite.coverImage.includes('cdn.sanity.io') && !selectedSite.coverImage.includes('public.blob.vercel-storage.com') && !selectedSite.coverImage.includes('indizio.space/api/media/file/')} /> : selectedSite.name}</div><div className="dialog-copy"><p className="eyebrow">{selectedSite.industry}</p><h2>{selectedSite.name}</h2>{selectedSite.tags?.length ? <div className="dialog-tags">{selectedSite.tags.map((tag) => <span className="card-tag" key={tag}>{tag}</span>)}</div> : null}{selectedSite.note && <p>{selectedSite.note}</p>}<a className="line-button line-button--dark" href={selectedSite.url} target="_blank" rel="noreferrer"><span>Visit storefront</span><span className="line-button__icon">↗</span></a></div></>}
       </dialog>
 
       <dialog className="auth-dialog" ref={authDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>

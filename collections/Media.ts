@@ -26,8 +26,8 @@ export const Media: CollectionConfig = {
       },
       {
         name: 'card',
-        width: 1200,
-        height: 968,
+        width: 800,
+        height: 646,
         position: 'top',
       },
     ],

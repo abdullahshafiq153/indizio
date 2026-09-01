@@ -8,11 +8,11 @@ export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'CRO Fieldnotes',
-  description: 'Brand teardowns, conversion blueprints, and evidence-backed observations from modern ecommerce storefronts.',
+  description: 'Original research into how leading ecommerce brands communicate value, reduce hesitation, and move customers toward conversion.',
   alternates: { canonical: '/fieldnotes' },
   openGraph: {
     title: 'CRO Fieldnotes | INDIZIO',
-    description: 'Long-form ecommerce research, brand teardowns, and practical conversion blueprints.',
+    description: 'Real storefront evidence translated into better conversion, merchandising, and customer-experience decisions.',
     url: '/fieldnotes',
   },
 }
@@ -37,17 +37,17 @@ export default async function FieldnotesPage() {
       <main id="fieldnotes" className="fieldnotes-page ruled-section">
         <header className="fieldnotes-hero">
           <div>
-            <p className="eyebrow">03 / CRO Fieldnotes</p>
-            <h1>Research for better decisions.</h1>
+            <p className="eyebrow">02 / CRO Fieldnotes</p>
+            <h1>Understand what stronger storefronts do differently.</h1>
           </div>
-          <p>Long-form brand teardowns, industry blueprints, and conversion patterns—written to explain not only what works, but why.</p>
+          <p>Original research into how leading brands communicate value, reduce hesitation, merchandise products, and shape the path to purchase.</p>
         </header>
 
         <section className="featured-fieldnotes" aria-labelledby="featured-fieldnotes-heading">
           <header className="featured-fieldnotes__heading">
             <p className="eyebrow">Featured notes</p>
             <h2 id="featured-fieldnotes-heading">Start with the essential reads.</h2>
-            <p>Selected research for the decisions shaping modern ecommerce.</p>
+            <p>Essential storefront research for deciding what to build, change, and test next.</p>
           </header>
           <div className="featured-fieldnotes__grid">
             {featured.map((article, index) => (

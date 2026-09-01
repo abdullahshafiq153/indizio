@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { BrandMark } from './brand-mark'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState, useTransition } from 'react'
 
@@ -9,7 +10,7 @@ import type { MemberSummary } from '../_data/load-library-data'
 import { AccountMenu } from './account-menu'
 import { useViewer } from './viewer-context'
 
-type ActiveNav = 'library' | 'fieldnotes' | 'atlas'
+type ActiveNav = 'library' | 'fieldnotes' | 'atlas' | 'extension'
 
 function BookmarkIcon() {
   return (
@@ -23,6 +24,7 @@ const navItems: Array<{ id: ActiveNav; href: string; label: string }> = [
   { id: 'library', href: '/library', label: 'Website library' },
   { id: 'fieldnotes', href: '/fieldnotes', label: 'CRO fieldnotes' },
   { id: 'atlas', href: '/atlas', label: 'Brand Atlas' },
+  { id: 'extension', href: '/extension', label: 'Extension' },
 ]
 
 export function EditorialHeader({ active, member: memberOverride, bookmarkCount: bookmarkCountOverride }: { active?: ActiveNav; member?: MemberSummary | null; bookmarkCount?: number }) {
@@ -47,7 +49,7 @@ export function EditorialHeader({ active, member: memberOverride, bookmarkCount:
         <Link href="/#index-report">Preview the research <span aria-hidden="true">↗</span></Link>
       </div>
       <header className="site-header">
-        <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
+        <Link className="wordmark" href="/" aria-label="INDIZIO home"><BrandMark className="wordmark__mark" />INDIZIO</Link>
         <nav className="primary-nav" aria-label="Primary navigation">
           {navItems.map((item) => <Link key={item.id} href={item.href} aria-current={active === item.id ? 'page' : undefined}>{item.label}</Link>)}
         </nav>
@@ -83,18 +85,27 @@ export function EditorialFooter() {
   return (
     <footer className="site-footer">
       <section className="footer-newsletter" id="newsletter">
-        <div><p className="footer-label">Indizio weekly</p><p className="footer-newsletter__headline">Seven signals, every Thursday.</p></div>
+        <div><p className="footer-label">Indizio Weekly</p><p className="footer-newsletter__headline">Seven signals. One useful briefing.</p></div>
         <div className="footer-newsletter__signup">
           <form className="newsletter-form" onSubmit={handleNewsletter}>
             <label className="visually-hidden" htmlFor="editorial-footer-email">Email address</label>
             <input id="editorial-footer-email" name="email" type="email" placeholder="Email address" required />
-            <button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button>
+            <button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join Indizio Weekly'}</span><i aria-hidden="true">↗</i></button>
           </form>
           <p className="form-message" aria-live="polite">{newsletterMessage}</p>
         </div>
       </section>
+      <nav className="footer-index-links" aria-label="Popular ecommerce industries">
+        <span>Browse by industry</span>
+        <Link href="/industries/apparel">Apparel</Link>
+        <Link href="/industries/beauty">Beauty</Link>
+        <Link href="/industries/coffee">Coffee</Link>
+        <Link href="/industries/food">Food</Link>
+        <Link href="/industries/supplements">Supplements</Link>
+        <Link href="/industries/home">Home</Link>
+      </nav>
       <div className="footer-meta">
-        <div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div>
+        <div className="footer-brand"><BrandMark className="footer-brand__mark" title="INDIZIO" /><p>Evidence from the storefront.</p></div>
         <div><p className="footer-label">Explore</p><Link href="/library">Website library</Link><Link href="/fieldnotes">CRO fieldnotes</Link><Link href="/atlas">Brand Atlas</Link><Link href="/extension">Chrome extension</Link></div>
         <div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div>
         <div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div>

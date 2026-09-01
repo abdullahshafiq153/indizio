@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { EditorialFooter, EditorialHeader } from '../../../_components/editorial-chrome'
 import { ReadingProgress } from '../../../_components/reading-progress'
 import { fallbackFieldnotes, loadFieldnote } from '../../../_data/fieldnotes'
+import { absoluteURL, jsonLd } from '../../../_data/seo'
 
 export const revalidate = 300
 
@@ -45,6 +46,29 @@ export default async function FieldnoteArticlePage({ params }: PageProps) {
   const { slug } = await params
   const article = await loadFieldnote(slug)
   if (!article) notFound()
+  const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article',
+        headline: article.title,
+        description: article.excerpt,
+        datePublished: article.publishedAt,
+        dateModified: article.publishedAt,
+        mainEntityOfPage: absoluteURL(`/fieldnotes/${article.slug}`),
+        author: { '@type': 'Organization', '@id': `${absoluteURL('/')}#organization`, name: 'INDIZIO Research' },
+        publisher: { '@type': 'Organization', '@id': `${absoluteURL('/')}#organization`, name: 'INDIZIO' },
+        articleSection: article.industry,
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'CRO fieldnotes', item: absoluteURL('/fieldnotes') },
+          { '@type': 'ListItem', position: 2, name: article.title },
+        ],
+      },
+    ],
+  }
 
   return (
     <>
@@ -85,6 +109,7 @@ export default async function FieldnoteArticlePage({ params }: PageProps) {
           <Link href="/fieldnotes"><span>Explore every CRO fieldnote.</span><i aria-hidden="true">↗</i></Link>
         </section>
       </main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
       <EditorialFooter />
     </>
   )

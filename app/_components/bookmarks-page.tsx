@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { BrandMark } from './brand-mark'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useMemo, useRef, useState, useTransition } from 'react'
 
@@ -212,7 +213,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
       </div>
 
       <header className="site-header">
-        <Link className="wordmark" href="/" aria-label="INDIZIO home">INDIZIO<span className="wordmark-dot">●</span></Link>
+        <Link className="wordmark" href="/" aria-label="INDIZIO home"><BrandMark className="wordmark__mark" />INDIZIO</Link>
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link href="/library">Website library</Link>
           <Link href="/fieldnotes">CRO fieldnotes</Link>
@@ -293,7 +294,7 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
                       <article className="site-card" key={bookmark.id}>
                         <div className="card-visual">
                           <a className="card-open" href={pageURL} target="_blank" rel="noreferrer" aria-label={`Visit ${pageName}`}>
-                            {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 360px" quality={70} />}
+                            {site.coverImage && <Image className="card-cover" src={site.coverImage} alt="" fill sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 360px" quality={70} unoptimized={!site.coverImage.includes('cdn.sanity.io') && !site.coverImage.includes('public.blob.vercel-storage.com') && !site.coverImage.includes('indizio.space/api/media/file/')} />}
                             {!site.coverImage && <span className="card-mark">{pageName}</span>}
                           </a>
                         </div>
@@ -318,8 +319,8 @@ export function BookmarksPage({ initialSites, initialMember, initialCollections,
       </main>
 
       <footer className="site-footer">
-        <section className="footer-newsletter" id="newsletter"><div><p className="footer-label">Indizio weekly</p><p className="footer-newsletter__headline">Seven signals, every Thursday.</p></div><div className="footer-newsletter__signup"><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="bookmarks-footer-email">Email address</label><input id="bookmarks-footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join the fieldnotes'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>
-        <div className="footer-meta"><div><p className="footer-label">INDIZIO</p><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/bookmarks">Bookmarks</Link><Link href="/#index-report">Research</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
+        <section className="footer-newsletter" id="newsletter"><div><p className="footer-label">Indizio Weekly</p><p className="footer-newsletter__headline">Seven signals. One useful briefing.</p></div><div className="footer-newsletter__signup"><form className="newsletter-form" onSubmit={handleNewsletter}><label className="visually-hidden" htmlFor="bookmarks-footer-email">Email address</label><input id="bookmarks-footer-email" name="email" type="email" placeholder="Email address" required /><button type="submit" aria-label="Subscribe" disabled={isPending}><span>{isPending ? 'Joining…' : 'Join Indizio Weekly'}</span><i aria-hidden="true">↗</i></button></form><p className="form-message" aria-live="polite">{newsletterMessage}</p></div></section>
+        <div className="footer-meta"><div className="footer-brand"><BrandMark className="footer-brand__mark" title="INDIZIO" /><p>Evidence from the storefront.</p></div><div><p className="footer-label">Explore</p><Link href="/library">Websites</Link><Link href="/bookmarks">Bookmarks</Link><Link href="/#index-report">Research</Link></div><div><p className="footer-label">Follow</p><Link href="/#newsletter">Newsletter</Link><a href="#">LinkedIn</a><a href="#">Instagram</a></div><div><p className="footer-label">Contact</p><a href="mailto:hello@indizio.space">hello@indizio.space</a><p>© 2026 INDIZIO</p></div></div>
       </footer>
 
       <dialog className="auth-dialog collection-dialog" ref={collectionDialogRef} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>

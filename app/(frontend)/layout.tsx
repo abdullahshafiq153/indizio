@@ -20,7 +20,7 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://indizio.space'),
+  metadataBase: new URL('https://www.indizio.space'),
   title: {
     default: 'INDIZIO — Ecommerce intelligence for growing brands',
     template: '%s | INDIZIO',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'INDIZIO — Ecommerce intelligence for growing brands',
     description: 'Find the brands worth studying and the storefront decisions worth acting on.',
-    url: 'https://indizio.space',
+    url: 'https://www.indizio.space',
     siteName: 'INDIZIO',
     type: 'website',
   },

@@ -3,6 +3,6 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://indizio.space/sitemap.xml
-Sitemap: https://indizio.space/brands/sitemap.xml
-Sitemap: https://indizio.space/industries/sitemap.xml
+Sitemap: https://www.indizio.space/sitemap.xml
+Sitemap: https://www.indizio.space/brands/sitemap.xml
+Sitemap: https://www.indizio.space/industries/sitemap.xml

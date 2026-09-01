@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 
 import { EditorialFooter, EditorialHeader } from '../../../_components/editorial-chrome'
 import { isIndexableBrand, loadPublicBrand, loadPublicSites, taxonomySlug } from '../../../_data/load-library-data'
-import { absoluteURL, jsonLd } from '../../../_data/seo'
+import { absoluteURL, jsonLd, truncateSEOText } from '../../../_data/seo'
 
 export const revalidate = 300
 
@@ -16,20 +16,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const brand = await loadPublicBrand(slug)
   if (!brand) return { title: 'Brand not found', robots: { index: false, follow: false } }
 
-  const description = brand.note || `Explore the ${brand.name} ecommerce website, its industry, product categories, and storefront details in the INDIZIO library.`
+  const description = truncateSEOText(brand.note || `Explore the ${brand.name} ecommerce website, its industry, product categories, and storefront details in the INDIZIO library.`, 160)
+  const pageTitle = truncateSEOText(`${brand.name} Website & Ecommerce Design`, 50)
   const indexable = isIndexableBrand(brand)
 
   return {
-    title: `${brand.name} Website & Ecommerce Design`,
+    title: pageTitle,
     description,
     alternates: { canonical: `/brands/${brand.slug}` },
     robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: {
-      title: `${brand.name} Website & Ecommerce Design | INDIZIO`,
+      title: `${pageTitle} | INDIZIO`,
       description,
       url: `/brands/${brand.slug}`,
       type: 'website',
       images: brand.coverImage ? [{ url: brand.coverImage, alt: `${brand.name} ecommerce storefront` }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${pageTitle} | INDIZIO`,
+      description,
+      images: brand.coverImage ? [brand.coverImage] : undefined,
     },
   }
 }
@@ -62,7 +69,7 @@ export default async function BrandPage({ params }: PageProps) {
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Website library', item: absoluteURL('/library') },
           { '@type': 'ListItem', position: 2, name: brand.industry, item: absoluteURL(industryHref) },
-          { '@type': 'ListItem', position: 3, name: brand.name },
+          { '@type': 'ListItem', position: 3, name: brand.name, item: absoluteURL(`/brands/${brand.slug}`) },
         ],
       },
     ],

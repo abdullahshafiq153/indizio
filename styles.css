@@ -976,6 +976,15 @@ button:disabled { cursor: wait; opacity: .58; }
 .seo-industry__tags > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .seo-industry__tags > div > span { padding: 8px 11px; border: 1px solid var(--soft-rule); border-radius: 999px; font: 500 9px var(--font-dm-mono), monospace; text-transform: uppercase; }
 .seo-industry__tags small { margin-left: 5px; color: var(--muted); }
+.seo-industry__editorial, .seo-industry__faq { padding: clamp(70px, 8vw, 116px) 44px; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: clamp(48px, 8vw, 130px); }
+.seo-industry__editorial h2, .seo-industry__faq h2 { max-width: 820px; margin: 24px 0 0; font-size: clamp(42px, 5.5vw, 82px); line-height: .96; letter-spacing: -.058em; }
+.seo-industry__editorial > div:last-child > p { max-width: 620px; margin: 0 0 34px; color: var(--muted); font-size: 17px; line-height: 1.65; }
+.seo-industry__editorial ul { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.seo-industry__editorial li { padding: 18px 0; border-bottom: 1px solid var(--rule); font: 500 11px var(--font-dm-mono), monospace; text-transform: uppercase; }
+.seo-industry__faq details { border-top: 1px solid var(--rule); }
+.seo-industry__faq details:last-child { border-bottom: 1px solid var(--rule); }
+.seo-industry__faq summary { padding: 22px 30px 22px 0; cursor: pointer; font-size: 18px; line-height: 1.35; }
+.seo-industry__faq details p { max-width: 650px; margin: -5px 0 24px; color: var(--muted); font-size: 14px; line-height: 1.65; }
 .seo-industry__list > article { min-height: 300px; padding: 28px 44px; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: minmax(220px, 340px) 46px minmax(300px, 1fr) auto; align-items: center; gap: 28px; }
 .seo-industry-card__visual { position: relative; display: block; width: 100%; aspect-ratio: 1.24 / 1; border: 1px solid var(--rule); overflow: hidden; background: var(--white); }
 .seo-industry-card__visual img { object-fit: cover; object-position: top; transition: transform .4s ease; }
@@ -996,6 +1005,7 @@ button:disabled { cursor: wait; opacity: .58; }
   .seo-detail__facts > div:nth-child(-n+2) { border-bottom: 1px solid var(--rule); }
   .seo-related { padding-inline: 24px; }
   .seo-industry__tags { padding-inline: 24px; grid-template-columns: 1fr; gap: 12px; }
+  .seo-industry__editorial, .seo-industry__faq { padding-inline: 24px; grid-template-columns: 1fr; gap: 44px; }
   .seo-industry__list > article { padding-inline: 24px; grid-template-columns: minmax(200px, 280px) 34px 1fr; }
   .seo-industry-card__actions { grid-column: 3; flex-direction: row; justify-content: flex-start; }
 }
@@ -1016,6 +1026,7 @@ button:disabled { cursor: wait; opacity: .58; }
   .seo-related__heading .eyebrow { grid-column: auto; }
   .seo-related__grid { grid-template-columns: 1fr; }
   .seo-industry__tags { padding-inline: 18px; }
+  .seo-industry__editorial, .seo-industry__faq { padding: 62px 18px; }
   .seo-industry__list > article { padding: 24px 18px 32px; grid-template-columns: 30px 1fr; gap: 20px 12px; }
   .seo-industry-card__visual { grid-column: 1 / -1; }
   .seo-industry-card__number { grid-column: 1; }

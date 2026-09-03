@@ -378,6 +378,9 @@ button.card-industry:hover, button.card-tag:hover { border-color: var(--ink); co
 .article-body blockquote { margin: 2.5em 0; padding: 8px 0 8px 28px; border-left: 3px solid var(--ink); font-size: clamp(27px, 3.1vw, 43px); line-height: 1.2; letter-spacing: -.04em; }
 .article-body ul, .article-body ol { margin: 0 0 1.7em; padding-left: 1.25em; }
 .article-body a { text-decoration: underline; text-underline-offset: 4px; }
+.article-figure { margin: 2.4em 0; }
+.article-figure img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
+.article-figure figcaption { margin-top: 12px; max-width: 680px; font-family: var(--font-mono); font-size: 11px; line-height: 1.5; letter-spacing: .01em; text-transform: uppercase; color: var(--muted); }
 .article-next { padding: clamp(70px, 9vw, 120px) 44px; border-top: 1px solid var(--rule); background: var(--ink); color: var(--white); }
 .article-next > a { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; }
 .article-next > a span { max-width: 1000px; font-size: clamp(52px, 7.5vw, 108px); line-height: .94; letter-spacing: -.065em; }

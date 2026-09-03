@@ -6,6 +6,8 @@ export type FieldnoteContentBlock =
   | { type: 'heading'; text: string }
   | { type: 'paragraph'; text: string }
   | { type: 'quote'; text: string }
+  | { type: 'link'; text: string; href: string }
+  | { type: 'image'; src: string; alt: string; caption: string; width: number; height: number }
 
 export type Fieldnote = {
   id: string
@@ -37,6 +39,40 @@ type ArticleSelection = {
 }
 
 export const fallbackFieldnotes: Fieldnote[] = [
+  {
+    id: 'fieldnote-brand-atlas-01',
+    slug: 'how-to-find-hidden-ecommerce-pages-with-brand-atlas',
+    title: 'How to find the ecommerce pages a storefront does not make easy to find',
+    excerpt: 'A practical Manukora research workflow for finding quiz results—and using a classified URL index to uncover products, collections, articles, and other public pages.',
+    industry: 'Research tools',
+    type: 'Workflow',
+    publishedAt: '2026-09-03T12:00:00.000Z',
+    readingTime: 6,
+    featured: true,
+    fallbackContent: [
+      { type: 'paragraph', text: 'The research question was unusually specific: what result screens does Manukora show after its product quiz? The storefront made the quiz itself easy to find. The pages at the end of that journey were less obvious.' },
+      { type: 'paragraph', text: 'Instead of clicking through every possible answer combination or trying increasingly narrow search queries, we entered manukora.com into Brand Atlas. Once its discoverable public URLs had been collected, typing “quiz” into the URL filter reduced the index to the pages relevant to the investigation.' },
+      { type: 'quote', text: 'The useful unit of ecommerce research is often not the brand. It is the exact page where a decision is being shaped.' },
+      { type: 'heading', text: 'The homepage was not the research question' },
+      { type: 'paragraph', text: 'Most ecommerce research begins on a homepage, but it rarely ends there. A researcher may need a quiz result, every product in a range, a particular collection, the editorial archive, an about page, or the policies surrounding a purchase. Store navigation is designed to guide shoppers, not to reveal the complete structure of the site to researchers.' },
+      { type: 'paragraph', text: 'That distinction matters. A polished homepage can explain the brand, but the deeper pages show how it segments customers, frames product choices, organizes inventory, answers objections, and moves intent toward a purchase.' },
+      { type: 'heading', text: 'A three-step research workflow' },
+      { type: 'paragraph', text: 'First, enter a brand domain or URL in Brand Atlas. Second, let the tool assemble the public URLs it can discover and classify recognizable page types. Third, narrow the index by page type or by a word in the URL. In the Manukora example, the word “quiz” turned a large set of pages into a focused list of likely quiz and result URLs.' },
+      { type: 'image', src: '/images/fieldnotes/brand-atlas-manukora-quiz-filter.png', alt: 'Brand Atlas showing 421 Manukora URLs filtered to seven quiz-related pages', caption: 'The Manukora map contained 421 URLs. Filtering for “quiz” surfaced seven relevant paths, including the quiz and result pages.', width: 1808, height: 941 },
+      { type: 'paragraph', text: 'The same method works when the question changes. Filter for product pages to study an assortment, collections to understand merchandising, articles and blog pages to inspect a content strategy, or policies to compare the reassurance surrounding delivery and returns.' },
+      { type: 'heading', text: 'Classification is what makes a crawl useful' },
+      { type: 'paragraph', text: 'A raw export of URLs creates a new sorting problem. Brand Atlas adds structure by grouping recognizable paths such as homepages, products, collections, blogs, articles, informational pages, help pages, policies, account pages, carts, checkouts, search pages, and gift cards. Researchers can begin with the page type most likely to answer the question, then use the text filter to become more precise.' },
+      { type: 'image', src: '/images/fieldnotes/brand-atlas-page-type-filter.png', alt: 'Brand Atlas page-type menu listing its URL classifications', caption: 'Page-type filters turn the crawl into a navigable research index instead of a raw URL dump.', width: 662, height: 605 },
+      { type: 'paragraph', text: 'Classification is deliberately a starting point rather than a claim that every site follows the same architecture. Ecommerce platforms use familiar URL patterns, but brands also create custom landing pages and unusual paths. The searchable index keeps those other pages available instead of discarding them.' },
+      { type: 'heading', text: 'Take the working set with you' },
+      { type: 'paragraph', text: 'Once the list answers the question, export the filtered results as a CSV. In this case, the export contained only the seven Manukora quiz paths instead of all 421 discovered URLs. Each row retains the URL, classified page type, available title, and discovery source, so the research can continue in a spreadsheet, audit, or team workspace.' },
+      { type: 'image', src: '/images/fieldnotes/brand-atlas-filtered-csv-export.png', alt: 'Spreadsheet containing seven exported Manukora quiz URLs with type and source columns', caption: 'The active quiz results exported as a compact CSV, ready to annotate, share, or use in a deeper teardown.', width: 855, height: 495 },
+      { type: 'heading', text: 'What Brand Atlas changes' },
+      { type: 'paragraph', text: 'The value is not the number of URLs returned. It is the time between forming a research question and reaching the pages that can answer it. A competitor teardown, content audit, product-range review, or quiz-flow investigation becomes repeatable: map the domain, select a page type, filter the paths, and open the relevant evidence.' },
+      { type: 'paragraph', text: 'Brand Atlas only surfaces public URLs it can discover; it does not access private or gated content. Within that boundary, it turns a storefront from a sequence of navigation choices into a reusable research map.' },
+      { type: 'link', text: 'Map a brand with Brand Atlas', href: '/atlas' },
+    ],
+  },
   {
     id: 'fieldnote-01',
     slug: 'why-the-best-product-pages-answer-objections-before-they-are-asked',
@@ -163,7 +199,11 @@ export const loadFieldnotes = cache(async (): Promise<Fieldnote[]> => {
     const articles = (result.docs as unknown as ArticleSelection[])
       .filter((article) => article.space !== 'ecommerce-ideas')
       .map(mapArticle)
-    return articles.length ? articles : fallbackFieldnotes
+    if (!articles.length) return fallbackFieldnotes
+
+    const articleSlugs = new Set(articles.map((article) => article.slug))
+    const localArticles = fallbackFieldnotes.filter((article) => !articleSlugs.has(article.slug))
+    return [...articles, ...localArticles].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
   } catch {
     return fallbackFieldnotes
   }

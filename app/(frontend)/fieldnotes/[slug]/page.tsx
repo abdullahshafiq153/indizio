@@ -1,6 +1,7 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -98,6 +99,13 @@ export default async function FieldnoteArticlePage({ params }: PageProps) {
               article.fallbackContent?.map((block, index) => {
                 if (block.type === 'heading') return <h2 key={index}>{block.text}</h2>
                 if (block.type === 'quote') return <blockquote key={index}>{block.text}</blockquote>
+                if (block.type === 'link') return <p key={index}><Link href={block.href}>{block.text} ↗</Link></p>
+                if (block.type === 'image') return (
+                  <figure className="article-figure" key={index}>
+                    <Image src={block.src} alt={block.alt} width={block.width} height={block.height} sizes="(max-width: 900px) 100vw, 760px" />
+                    <figcaption>{block.caption}</figcaption>
+                  </figure>
+                )
                 return <p key={index}>{block.text}</p>
               })
             )}

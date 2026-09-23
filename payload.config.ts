@@ -19,7 +19,9 @@ import { Members } from './collections/Members'
 import { Styles } from './collections/Styles'
 import { Websites } from './collections/Websites'
 
-const serverURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+const configuredServerURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+// Browser uploads must use the canonical origin to avoid the apex redirect.
+const serverURL = configuredServerURL.replace(/^https:\/\/indizio\.space\/?$/, 'https://www.indizio.space')
 const trustedVercelOrigins = [
   process.env.VERCEL_URL,
   process.env.VERCEL_BRANCH_URL,
@@ -77,3 +79,4 @@ export default buildConfig({
     outputFile: './payload-types.ts',
   },
 })
+

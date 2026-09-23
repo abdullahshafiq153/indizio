@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Indizio library import</title>
+<style>body{font:16px system-ui;max-width:800px;margin:60px auto;padding:20px}button,input{padding:12px}pre{white-space:pre-wrap}</style>
+<h1>Import reviewed library entries</h1>
+<p>Sign in to the Indizio admin first. Select the approved JSON bundle to upload its screenshots and publish its entries. Existing website slugs are skipped.</p>
+<input id="bundle" type="file" accept="application/json"><button id="run">Publish bundle</button><pre id="log" aria-live="polite"></pre>
+<script>
+const log = document.querySelector('#log');
+const say = message => { log.textContent += message + '\n'; };
+async function api(path, options) {
+  const response = await fetch('/api/' + path, {credentials:'same-origin', ...options});
+  const data = await response.json();
+  if (!response.ok || data.errors) throw Error(JSON.stringify(data.errors || data));
+  return data;
+}
+const create = (collection, data) => api(collection, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+const slugify = text => text.toLowerCase().replace(/'/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+document.querySelector('#run').onclick = async () => {
+  const button = document.querySelector('#run'); button.disabled = true;
+  try {
+    const me = await api('admins/me');
+    if (!me.user || me.user.collection !== 'admins') throw Error('Sign in to the admin first.');
+    const file = document.querySelector('#bundle').files[0];
+    if (!file) throw Error('Select an approved bundle.');
+    const entries = JSON.parse(await file.text());
+    if (!Array.isArray(entries) || entries.length > 50) throw Error('Invalid bundle');
+    for (const e of entries) {
+      if (!e.name || !/^[a-z0-9-]+$/.test(e.slug) || !e.note || !e.alt || !Array.isArray(e.tags) || !e.imageBase64 || !/^https:\/\//.test(e.url)) throw Error('Invalid entry');
+    }
+    const industries = (await api('industries?limit=500')).docs;
+    const tags = (await api('styles?limit=500')).docs;
+    for (const e of entries) {
+      const existing = await api('websites?limit=1&where[slug][equals]=' + encodeURIComponent(e.slug));
+      if (existing.docs.length) {say('Skipped existing: '+e.name); continue;}
+      const industry = industries.find(x => x.slug === e.industrySlug);
+      if (!industry) throw Error('Unknown industry: '+e.industrySlug);
+      const styles = [];
+      for (const name of e.tags) {
+        let tag = tags.find(x => x.name === name);
+        if (!tag) {tag = (await create('styles',{name,slug:slugify(name)})).doc; tags.push(tag);}
+        styles.push(tag.id);
+      }
+      let media = (await api('media?limit=1&where[alt][equals]=' + encodeURIComponent(e.alt))).docs[0];
+      if (!media) {
+        const bytes = Uint8Array.from(atob(e.imageBase64), x => x.charCodeAt(0));
+        const form = new FormData();
+        form.append('_payload', JSON.stringify({alt:e.alt}));
+        form.append('file', new File([bytes], e.slug+'.png', {type:'image/png'}));
+        media = (await api('media',{method:'POST',body:form})).doc;
+      }
+      await create('websites',{name:e.name,slug:e.slug,url:e.url,note:e.note,industry:industry.id,styles,cover:media.id,featuredRank:0,_status:'published'});
+      say('Published: '+e.name);
+    }
+    say('Import complete.');
+  } catch (error) {say('Stopped: '+error.message+' — retrying safely skips existing entries.');}
+  finally {button.disabled = false;}
+};
+</script></html>
